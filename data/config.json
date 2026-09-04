@@ -1,0 +1,29 @@
+{
+  "clinical_thresholds": {
+    "ahi_normal_max": 5.0,
+    "ahi_mild_max": 15.0,
+    "ahi_moderate_max": 30.0,
+    "ahi_order_pap_threshold": 15.0,
+    "residual_ahi_uncontrolled_threshold": 5.0,
+    "plm_severe_threshold": 25.0,
+    "leak_significant_lmin": 24.0,
+    "device_replacement_age_years": 5.0
+  },
+  "compliance_rules": {
+    "required_daily_hours": 4.0,
+    "required_pct_nights": 70.0,
+    "compliance_window_days": 30,
+    "insurance_review_window_days": 90,
+    "first_outreach_day": 12,
+    "first_outreach_window_days": 6,
+    "final_outreach_day": 75,
+    "final_outreach_window_days": 10,
+    "min_days_between_calls": 7
+  },
+  "org": {
+    "name": "Vero Health Sleep & DME Center",
+    "scheduling_phone": "(555) 010-0100",
+    "from_email": "care-team@verohealth.test",
+    "doctor_email_followup_cooldown_days": 14
+  }
+}

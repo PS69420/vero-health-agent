@@ -1,0 +1,266 @@
+{
+  "_source_note": "Test fixture data transcribed/normalized from the sample HST/PSG/CPAP titration reports and office notes provided. Represents the shape of data the real EMR + AirView connectors will return once wired up. Not real PHI.",
+  "patients": [
+    {
+      "patient_id": "p001",
+      "name": "Williams, Ronald",
+      "dob": "1959-07-09",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2026-03-23", "ahi": 90.7, "severity": "severe", "plm_index": 56.0, "plm_severity": "severe", "notes": "Severe OSA. Significant PLM with arousals."},
+        {"type": "CPAP_titration", "date": "2026-04-03", "device": "CPAP", "pressure_cmh2o": 17, "ahi_on_pressure": 4.0, "plm_index_on_pressure": 172.8, "notes": "AHI well controlled at 17cmH2O fixed CPAP. PLM index worsened/persisted on treatment (172.8) despite AHI control - limb movement disorder needs separate management."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "17 cmH2O fixed", "order_date": "2026-04-03"},
+      "office_note_summary": "2026-07-27: CPAP 17cmH2O, adherence 97%, AHI 0.5, leak 41.9 (elevated). Dx: OSA, obesity, insomnia, severe PLM disorder. Started Mirapex + Ambien. F/u 6 months.",
+      "clinical_flags": ["severe_plm_uncontrolled", "elevated_mask_leak"]
+    },
+    {
+      "patient_id": "p002",
+      "name": "Pena, Gabriel",
+      "dob": "1984-09-28",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2023-03-02", "ahi": 23.3, "severity": "moderate"}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "APAP", "pressure": "5-20 cmH2O", "order_date": "2023-03-02"},
+      "office_note_summary": "2026-08-03: APAP 5-20cmH2O. Care check-in flagged moderate/very sleepy. Plan: switch to nasal pillows, increase humidifier setting. F/u 6 months.",
+      "clinical_flags": ["reports_persistent_daytime_sleepiness", "mask_comfort_issue"]
+    },
+    {
+      "patient_id": "p003",
+      "name": "Trinidad, Carmelo",
+      "dob": "1965-02-12",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2023-12-07", "ahi": 57.2, "severity": "severe"},
+        {"type": "CPAP_titration", "date": "2024-01-08", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 1.4, "notes": "AHI well controlled at 10cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "10 cmH2O fixed (titrated) - compliance report shows device set to 7cmH2O, DATA CONFLICT", "order_date": "2024-01-08"},
+      "office_note_summary": "2026-08-04: Lost 42-47lbs since last visit. CPAP well tolerated. Restless legs noted. F/u 6 months.",
+      "clinical_flags": ["pressure_setting_conflict_vs_titration", "possible_restless_legs"]
+    },
+    {
+      "patient_id": "p004",
+      "name": "Rodriguez, Elizabeth",
+      "dob": "2000-12-31",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2026-04-10", "ahi": 6.4, "severity": "mild"},
+        {"type": "CPAP_titration", "date": "2026-05-08", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 1.7, "notes": "AHI well controlled at 10cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "10 cmH2O fixed", "order_date": "2026-05-08", "device_platform": "ReactHealth G3X", "sn_assigned_date": "2026-06-12"},
+      "office_note_summary": "2026-08-07: History of bariatric surgery, morbid obesity. CPAP required perioperatively - documented increased risk of morbidity/mortality if non-adherent. ResMed F20 mask ordered.",
+      "clinical_flags": ["perioperative_compliance_critical", "bariatric_surgery_history"]
+    },
+    {
+      "patient_id": "p005",
+      "name": "Ramirez, Francisco",
+      "dob": "1958-06-10",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2026-03-06", "ahi": 114.0, "severity": "severe"},
+        {"type": "CPAP_titration", "date": "2026-03-14", "device": "CPAP", "pressure_cmh2o": 15, "ahi_on_pressure": 37.8, "notes": "AHI NOT resolved at 15cmH2O - still moderate-severe residual disease on max titrated pressure. Consider BiPAP or interface change."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "15 cmH2O fixed", "order_date": "2026-03-14", "device_platform": "ReactHealth G3X", "sn_assigned_date": "2026-06-26"},
+      "office_note_summary": "2026-08-07: Holds commercial driver's license (CDL) - renewal pending, must document control of OSA. On GLP-1 for weight loss. Full-face mask uncomfortable - plan to switch to nasal mask/pillows. Counseled not to drive while sleepy.",
+      "clinical_flags": ["residual_ahi_uncontrolled_on_max_cpap", "cdl_safety_sensitive", "mask_interface_issue", "consider_bipap_escalation"]
+    },
+    {
+      "patient_id": "p006",
+      "name": "Byrnes, Kenneth",
+      "dob": "1961-11-06",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2023-11-16", "ahi": 15.4, "severity": "moderate", "plm_index": 77.1, "plm_severity": "severe"}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "APAP", "pressure": "5-20 cmH2O", "order_date": "2023-11-16"},
+      "office_note_summary": "2026-08-10: Adherent, weight loss in progress, sleep hygiene counseling given. Doing well.",
+      "clinical_flags": ["severe_plm_at_diagnosis_monitor"]
+    },
+    {
+      "patient_id": "p007",
+      "name": "Thiele, Thomas",
+      "dob": "1962-11-21",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2025-09-10", "ahi": 52.7, "severity": "severe"},
+        {"type": "BiPAP_ASV_titration", "date": "2025-11-12", "device": "BiPAP-ASV", "epap": 9, "ps_range": "4-10", "ahi_on_pressure": 36.4, "notes": "AHI persisted at 36.4 despite ASV titration; hypoxemia and cardiac arrhythmias noted on EKG during study. Complex case - required physician co-management."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "BiPAP-ASV", "pressure": "EPAP 9 / PS 4-10 cmH2O", "order_date": "2025-11-12"},
+      "office_note_summary": "2026-08-17: Commercial driver, history of AFib. ASV therapy has since improved sleep-disordered breathing substantially (compliance data shows AHI 0.5 on current settings). F/u 6 months.",
+      "clinical_flags": ["cardiac_arrhythmia_history", "cdl_safety_sensitive", "required_specialist_escalation_resolved"]
+    },
+    {
+      "patient_id": "p008",
+      "name": "Liriano, Cristian",
+      "dob": "1965-06-17",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2022-03-11", "ahi": 65.0, "severity": "severe", "notes": "Severe OSA with a central sleep apnea component."},
+        {"type": "CPAP_titration", "date": "2024-07-13", "device": "CPAP", "pressure_cmh2o": 9, "ahi_on_pressure": 3.7, "notes": "AHI controlled at 9cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "9 cmH2O fixed", "order_date": "2024-07-13"},
+      "office_note_summary": "2026-08-18: Long-standing OSA diagnosed 2014. Obesity, insufficient sleep duration. Adherence has been low (30-60% historically). Nasal pillows tried. Weight loss counseling. F/u 6 months.",
+      "clinical_flags": ["central_apnea_component_at_diagnosis", "chronic_low_adherence"]
+    },
+    {
+      "patient_id": "p009",
+      "name": "Williams, Clay",
+      "dob": "1962-09-03",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2026-04-28", "ahi": 19.8, "severity": "moderate", "rem_ahi": 57.6, "notes": "REM-predominant OSA - AHI much worse in REM sleep."},
+        {"type": "CPAP_titration", "date": "2026-05-12", "device": "CPAP", "pressure_cmh2o": 12, "ahi_on_pressure": 2.5, "notes": "AHI well controlled at 12cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "12 cmH2O fixed", "order_date": "2026-05-12"},
+      "office_note_summary": "2026-08-18: Commercial (CDL) truck driver, pacemaker discussed. Adherence declining sharply per compliance data. Started Ambien to help with adherence. F/u in 6 weeks (short interval - urgent).",
+      "clinical_flags": ["cdl_safety_sensitive", "adherence_declining_urgent", "pacemaker_history", "short_interval_followup"]
+    },
+    {
+      "patient_id": "p010",
+      "name": "Simpson, Michelle",
+      "dob": "1965-09-25",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2026-03-25", "ahi": 24.7, "severity": "moderate"},
+        {"type": "CPAP_titration", "date": "2026-05-08", "device": "CPAP", "pressure_cmh2o": 14, "ahi_on_pressure": 4.5, "notes": "Mild residual events in REM at 14cmH2O; titration note suggests trial of 15cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "10 cmH2O (office note documents lower working pressure than titration - leak-driven adjustment)", "order_date": "2026-05-08"},
+      "office_note_summary": "2026-08-18: CPAP at 10cmH2O, switched to nasal pillows to fix mask leak, adherence good (87-100%), AHI 2.4.",
+      "clinical_flags": ["pressure_setting_conflict_vs_titration"]
+    },
+    {
+      "patient_id": "p011",
+      "name": "Defalco, Garrett",
+      "dob": "1983-09-29",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2021-10-22", "ahi": 9.5, "severity": "mild", "rem_ahi": 29.2},
+        {"type": "CPAP_titration", "date": "2025-05-03", "device": "CPAP", "pressure_cmh2o": 14, "ahi_on_pressure": 0.5, "notes": "Excellent control at 14cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "14 cmH2O -> being reduced to 13 cmH2O", "order_date": "2025-05-03", "device_age_years": 5},
+      "office_note_summary": "2026-08-24: Machine is over 5 years old and has stopped working. Weight increased 27lbs since last titration. Pressure decreased to 13cmH2O. New replacement machine ordered; rental unit provided in interim.",
+      "clinical_flags": ["equipment_end_of_life_replacement_needed", "weight_change_since_titration"]
+    },
+    {
+      "patient_id": "p012",
+      "name": "Sandoval, Raul",
+      "dob": "1974-09-27",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2025-11-11", "ahi": 19.6, "severity": "moderate"},
+        {"type": "CPAP_titration", "date": "2025-12-22", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 2.4, "notes": "AHI well controlled."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "10 cmH2O fixed", "order_date": "2025-12-22"},
+      "office_note_summary": "2026-08-24: Uses phone/watches videos in bed - sleep hygiene counseling given. Declined nutrition referral. F/u 12 months.",
+      "clinical_flags": ["sleep_hygiene_issue"]
+    },
+    {
+      "patient_id": "p013",
+      "name": "Figueroa, Luis",
+      "dob": "1991-07-04",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2026-01-22", "ahi": 37.9, "severity": "severe"},
+        {"type": "CPAP_titration", "date": "2026-02-07", "device": "CPAP", "pressure_cmh2o": 12, "ahi_on_pressure": 5.5, "notes": "Mild residual events persist at 12cmH2O - titration note recommends increasing to 14cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "APAP", "pressure": "8-12 cmH2O (switched to APAP w/ ramp due to leak, rather than fixed 14cmH2O)", "order_date": "2026-02-07"},
+      "office_note_summary": "2026-06-01 (printed 2026-08-27): ADHD history. Nasal mask uncomfortable. Switched to APAP 8-12 for leak/comfort. Weight loss counseling. F/u 6 months.",
+      "clinical_flags": ["mask_comfort_issue", "titration_recommendation_not_yet_implemented"]
+    },
+    {
+      "patient_id": "p014",
+      "name": "Gillesheimer, George",
+      "dob": "1949-08-23",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2026-02-18", "ahi": 45.0, "severity": "severe", "notes": "Central and mixed apnea component noted."},
+        {"type": "CPAP_titration", "date": "2026-03-11", "device": "CPAP", "pressure_cmh2o": 16, "ahi_on_pressure": 8.8, "plm_index_on_pressure": 60.0, "plm_severity": "severe", "notes": "Residual AHI still elevated (8.8) at max fixed pressure 16cmH2O; severe PLM as well."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "APAP", "pressure": "12-16 cmH2O", "order_date": "2026-03-11"},
+      "office_note_summary": "2026-06-26 (printed 2026-08-27): Glaucoma history, reports leg cramps. Adherence poor (47-67%). Switched to APAP 12-16cmH2O, refitting mask, started Zyrtec for nasal congestion.",
+      "clinical_flags": ["residual_ahi_uncontrolled", "central_mixed_apnea_component", "severe_plm_uncontrolled", "chronic_low_adherence"]
+    },
+    {
+      "patient_id": "p015",
+      "name": "Mucciolo, Rosann",
+      "dob": "1962-10-04",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2026-05-16", "ahi": 9.8, "severity": "mild", "rem_ahi": 30.7},
+        {"type": "CPAP_titration", "date": "2026-06-02", "device": "CPAP", "pressure_cmh2o": 11, "ahi_on_pressure": 3.1, "notes": "Well controlled at 11cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "APAP", "pressure": "8-12 cmH2O", "order_date": "2026-06-02"},
+      "office_note_summary": "2026-08-21: History of AFib, pneumonia, SVT. Reports full-face and nasal masks both uncomfortable - removes mask during sleep. Switched to APAP 8-12, refitting for comfort. Short F/u interval of 4 weeks given mask issues.",
+      "clinical_flags": ["mask_comfort_issue_removing_device", "cardiac_history", "short_interval_followup", "insufficient_compliance_data_window"]
+    },
+    {
+      "patient_id": "p016",
+      "name": "Rana, Shyamku",
+      "dob": "2002-06-03",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2025-10-27", "ahi": 27.0, "severity": "moderate"},
+        {"type": "CPAP_titration", "date": "2025-11-13", "device": "CPAP", "pressure_cmh2o": 8, "ahi_on_pressure": 6.2, "notes": "Residual events persist at 8cmH2O - titration note recommends AutoCPAP 8-16cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "8 cmH2O fixed (titration-recommended AutoCPAP upgrade not yet implemented)", "order_date": "2025-11-13"},
+      "office_note_summary": "2026-07-07: NJ Transit pre-employment safety-sensitive evaluation. Reports daytime somnolence with longer sleep duration. Stimulant medication discussed. F/u 6 months.",
+      "clinical_flags": ["safety_sensitive_occupation", "titration_recommendation_not_yet_implemented", "residual_events_on_fixed_pressure"]
+    },
+    {
+      "patient_id": "p017",
+      "name": "Roig, Jose",
+      "dob": "1954-12-31",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2023-06-17", "ahi": 53.4, "severity": "severe"},
+        {"type": "CPAP_titration", "date": "2023-07-13", "device": "CPAP", "pressure_cmh2o": 12, "ahi_on_pressure": 2.8, "notes": "Well controlled."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "12 cmH2O fixed", "order_date": "2023-07-13"},
+      "office_note_summary": "2026-04-27: Reports ongoing hypersomnia despite adequate PAP therapy. Stimulant medication discussed. F/u 6 months.",
+      "clinical_flags": ["residual_hypersomnia_despite_good_pap_control"]
+    },
+    {
+      "patient_id": "p018",
+      "name": "Ang, Ban",
+      "dob": "1953-03-16",
+      "sleep_studies": [
+        {"type": "PSG_diagnostic", "date": "2025-11-18", "ahi": 49.2, "severity": "severe", "notes": "Central apnea component present."},
+        {"type": "CPAP_titration", "date": "2025-12-17", "device": "CPAP", "pressure_cmh2o": 6, "ahi_on_pressure": 1.8, "notes": "Well controlled at low pressure of 6cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "6 cmH2O fixed", "order_date": "2025-12-17", "device_age_years": 5},
+      "office_note_summary": "2025-12-23: History of stroke. Central apnea noted as a concern given stroke history. Uses phone in bed. Lost 25lbs. Machine is old and due for replacement. F/u 6 weeks.",
+      "clinical_flags": ["central_apnea_component_at_diagnosis", "stroke_history", "equipment_end_of_life_replacement_needed"]
+    },
+    {
+      "patient_id": "p019",
+      "name": "Ramos, Acisclo",
+      "dob": "1975-10-05",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2021-05-17", "ahi": 25.3, "severity": "moderate"}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "APAP", "pressure": "6-20 cmH2O", "order_date": "2021-05-17"},
+      "office_note_summary": "2026-06-02: Routine compliance follow-up. APAP 5-20cmH2O. Sleep hygiene counseling. F/u 6 months.",
+      "clinical_flags": []
+    },
+    {
+      "patient_id": "p020",
+      "name": "Vega, Peggylee",
+      "dob": "1972-10-19",
+      "sleep_studies": [
+        {"type": "AirView_diagnostic", "date": "2025-11-30", "ahi": 36.5, "severity": "severe"},
+        {"type": "CPAP_titration", "date": "2025-12-16", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 2.4, "notes": "Pressure increase during titration produced new central apneas - treatment-emergent central sleep apnea noted. Settled on 10cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "10 cmH2O fixed", "order_date": "2025-12-16"},
+      "office_note_summary": "2026-08-17: Obesity, depression. Continued daytime sleepiness despite CPAP and modafinil. Sunosi dose increased. Complex case given documented treatment-emergent central apnea at higher pressures.",
+      "clinical_flags": ["treatment_emergent_central_apnea", "residual_daytime_sleepiness_on_therapy", "complex_case_physician_managed"]
+    },
+    {
+      "patient_id": "p021",
+      "name": "Rhodes, Eva",
+      "dob": "1992-05-16",
+      "sleep_studies": [
+        {"type": "CPAP_titration", "date": "2026-04-23", "device": "CPAP", "pressure_cmh2o": 17, "plm_index_on_pressure": 12.0, "plm_severity": "mild", "notes": "Pressure increased to 17cmH2O from prior 12cmH2O."}
+      ],
+      "current_pap_status": {"on_pap": true, "device_type": "CPAP", "pressure": "17 cmH2O fixed", "order_date": "2026-04-23"},
+      "office_note_summary": "2026-05-01: Patient has Down syndrome, is non-verbal, and has hypothyroidism. Mother/caregiver reports machine noise issues, weight gain, nocturia, and increased nighttime agitation since pressure increase.",
+      "clinical_flags": ["non_verbal_patient_caregiver_required", "vulnerable_patient_extra_care", "device_noise_complaint", "behavioral_change_reported"]
+    },
+    {
+      "patient_id": "p022",
+      "name": "[SYNTHETIC TEST FIXTURE] Doe, Jordan",
+      "dob": "1978-01-15",
+      "_synthetic": true,
+      "_synthetic_note": "Not from source documents. Added only to exercise the 'treatment-naive patient needs an initial PAP order' code path, since every real patient in the sample data already had CPAP ordered.",
+      "sleep_studies": [
+        {"type": "HST_diagnostic", "date": "2026-08-20", "ahi": 32.0, "severity": "severe"}
+      ],
+      "current_pap_status": {"on_pap": false},
+      "office_note_summary": "2026-08-26: Severe OSA confirmed on home sleep test. No PAP therapy ordered yet.",
+      "clinical_flags": ["treatment_naive_meets_pap_criteria"]
+    }
+  ]
+}

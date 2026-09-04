@@ -1,0 +1,47 @@
+{
+  "medicare_compliance_rule": "Medicare (CMS) requires documented usage of the PAP device for at least 4 hours per night on at least 70% of nights during any single consecutive 30-day period within the first 90 days of therapy. If this is not met and re-evaluated, coverage for the device can be discontinued and therapy must be re-qualified from the start.",
+
+  "escalation_policy": "If the patient or record shows a clinical red flag (central/mixed apnea, cardiac arrhythmia, treatment-emergent central apnea, conflicting or missing chart data, or a vulnerable/non-verbal patient who cannot self-report), the agent stops short of taking an automated action (auto-sending an order request, auto-calling the patient) and instead logs the case for a human Respiratory Therapist / clinician to review and decide next steps.",
+
+  "barrier_tips": {
+    "mask_leak": "High leak is usually a fit issue, not a machine issue. Try tightening just the straps that are gapping, and if it keeps leaking after refitting, ask about a different mask style (nasal pillows vs. full-face) at your next supply order.",
+    "forgetting": "Keep the mask on the nightstand, not in a drawer, and pair putting it on with something you already do every night, like brushing your teeth or setting an alarm.",
+    "discomfort": "Comfort settings can help a lot: turning on ramp (so pressure starts low and builds up) and using the heated humidifier if you're getting a dry nose or throat.",
+    "noise": "Some noise is normal, but a sudden change often means the filter needs replacing or the mask has a leak. Worth checking both before assuming the machine itself is the problem.",
+    "claustrophobia": "Starting with the mask on for short periods while awake (watching TV, reading) can help you get used to the sensation before relying on it to fall asleep.",
+    "travel_disruption": "Bringing the machine on trips, even short ones, and keeping the routine the same helps avoid the multi-day gaps that hurt the compliance percentage the most."
+  },
+
+  "barrier_patient_lines": {
+    "mask_leak": "Honestly the mask keeps leaking air and it wakes me up, so some nights I just give up on it.",
+    "discomfort": "It's just uncomfortable, I don't sleep well with it on so I take it off partway through the night.",
+    "noise": "It's been louder than I remember, it's hard to fall asleep with the noise.",
+    "forgetting": "I've just been forgetting some nights, or I fall asleep before I put it on.",
+    "travel_disruption": "I've had a few nights away and didn't bring it, and it's been hard to get back into the routine."
+  },
+
+  "barrier_keywords": {
+    "mask_leak": ["leak", "elevated_mask_leak"],
+    "discomfort": ["mask_comfort_issue", "uncomfortable"],
+    "noise": ["device_noise_complaint", "noise"],
+    "forgetting": ["chronic_low_adherence", "sleep_hygiene_issue"],
+    "travel_disruption": ["adherence_declining"]
+  },
+
+  "escalation_flags": {
+    "dme_needs": {
+      "central_apnea_component_at_diagnosis": "Central/mixed apnea component present -- not a routine CPAP-pressure fix.",
+      "treatment_emergent_central_apnea": "Treatment-emergent central sleep apnea documented -- complex, physician-managed.",
+      "cardiac_arrhythmia_history": "Cardiac arrhythmia in history -- coordinate with cardiology/physician before equipment changes.",
+      "residual_ahi_uncontrolled": "Residual AHI still elevated on current max settings -- may need physician-directed titration, not a standard supply order.",
+      "non_verbal_patient_caregiver_required": "Patient is non-verbal / relies on a caregiver to report symptoms -- route through caregiver and clinician, not an automated request.",
+      "pressure_setting_conflict_vs_titration": "Chart shows conflicting pressure settings between the titration study and the device -- data integrity issue, needs a clinician/tech to confirm the correct setting before any order goes out."
+    },
+    "compliance": {
+      "non_verbal_patient_caregiver_required": "Patient is non-verbal / relies on a caregiver -- route outreach through the caregiver and a clinician, not an automated call.",
+      "central_apnea_component_at_diagnosis": "Central/mixed apnea component present -- low adherence here may be clinical, not behavioral; a clinician should assess before more outreach calls.",
+      "treatment_emergent_central_apnea": "Treatment-emergent central sleep apnea documented -- complex case, physician-managed.",
+      "cardiac_arrhythmia_history": "Cardiac arrhythmia in history -- coordinate with the care team before continued outreach."
+    }
+  }
+}
