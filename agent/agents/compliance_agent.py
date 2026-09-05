@@ -126,7 +126,7 @@ class ComplianceAgent:
             trace.act("place_compliance_call", purpose)
             call_record = self.voice_tool.place_call(
                 patient, call_purpose=purpose,
-                context={"snapshot": snapshot, "prior_calls": prior_calls, "day_of_therapy": day_of_therapy},
+                context={"snapshot": snapshot, "prior_calls": prior_calls, "day_of_therapy": day_of_therapy, "as_of": self.as_of},
             )
             self.memory.record_call(patient.patient_id, call_record)
             outcome = call_record.get("outcome_tag")

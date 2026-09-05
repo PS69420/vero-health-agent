@@ -10,8 +10,9 @@ same send() signature.
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
+from typing import Optional
 
 from agent.tools.base import EmailTool
 
@@ -26,9 +27,12 @@ class MockEmailTool(EmailTool):
         self.out_dir.mkdir(parents=True, exist_ok=True)
         self._counter = 0
 
-    def send(self, to: str, subject: str, body: str, patient_id: str) -> dict:
+    def send(self, to: str, subject: str, body: str, patient_id: str, as_of: Optional[date] = None) -> dict:
         self._counter += 1
-        sent_at = datetime.now()
+        # Timestamp against the business date being evaluated, not wall-clock
+        # time, so a backtest replaying several historical `as_of` dates in
+        # one process gets correctly-dated records (and correct cooldowns).
+        sent_at = datetime.combine(as_of, datetime.now().time()) if as_of else datetime.now()
         message_id = f"MOCK-{sent_at.strftime('%Y%m%d%H%M%S')}-{self._counter:03d}"
         filename = f"{sent_at.strftime('%Y%m%d')}_{patient_id}_{_slugify(subject)[:50]}.txt"
         path = self.out_dir / filename

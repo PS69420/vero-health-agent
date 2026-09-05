@@ -102,6 +102,36 @@ class TestComplianceAgent(unittest.TestCase):
         self.assertEqual(decision.action, "none")
         self.assertEqual(len(voice.calls), 0)
 
+    def test_backtest_across_dates_uses_as_of_not_wall_clock_for_cooldown(self):
+        """Regression test: the real MockVoiceCallTool must timestamp calls
+        against the simulated `as_of` date, not real wall-clock time -- a
+        backtest that replays several historical dates in one process (e.g.
+        the dashboard's time-scrubber) executes them all within the same
+        real instant, so a wall-clock timestamp would make every call look
+        like it happened "today" and the 7-day cooldown would compare against
+        the wrong dates entirely."""
+        from agent.tools.voice_tool import MockVoiceCallTool
+        voice = MockVoiceCallTool()
+        p = _patient()
+        snap = _snapshot("p1", date(2026, 1, 1), date(2026, 1, 11), days_used_ge_4hr=5)
+
+        # Day 70 of therapy: within the final (pre-90-day) outreach window.
+        agent1 = ComplianceAgent(voice_tool=voice, memory=self.memory, as_of=date(2026, 3, 12))
+        decision1 = agent1.evaluate(p, snap)
+        self.assertEqual(decision1.action, "schedule_urgent_outreach")
+
+        # 15 simulated days later (day 85) -- well past the 7-day cooldown,
+        # so this call must still go out even though both evaluations happen
+        # in the same real-world millisecond.
+        agent2 = ComplianceAgent(voice_tool=voice, memory=self.memory, as_of=date(2026, 3, 27))
+        decision2 = agent2.evaluate(p, snap)
+        self.assertEqual(decision2.action, "schedule_urgent_outreach")
+
+        calls = self.memory.calls_for("p1")
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(calls[0]["timestamp"].startswith("2026-03-12"))
+        self.assertTrue(calls[1]["timestamp"].startswith("2026-03-27"))
+
 
 if __name__ == "__main__":
     unittest.main()

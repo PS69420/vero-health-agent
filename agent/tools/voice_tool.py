@@ -50,7 +50,10 @@ class MockVoiceCallTool(VoiceCallTool):
     def place_call(self, patient: Patient, call_purpose: str, context: dict[str, Any]) -> dict:
         self._counter += 1
         seed = _seed(patient.patient_id, f"{call_purpose}:{self._counter}")
-        now = datetime.now()
+        # Timestamp against the business date being evaluated, not wall-clock
+        # time -- see EmailTool.send for why this matters for backtests.
+        as_of = context.get("as_of")
+        now = datetime.combine(as_of, datetime.now().time()) if as_of else datetime.now()
         call_id = f"MOCKCALL-{now.strftime('%Y%m%d%H%M%S')}-{self._counter:03d}"
 
         # ~1 in 6 calls simulate a missed connection, matching real-world call

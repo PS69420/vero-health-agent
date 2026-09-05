@@ -81,7 +81,7 @@ class DmeNeedsAgent:
                            f"{config.DOCTOR_EMAIL_FOLLOWUP_COOLDOWN_DAYS}-day follow-up window, not re-sending.")
             return f"Already emailed the physician about this {days_since} day(s) ago; not re-sending yet."
         trace.act("draft_and_send_doctor_email", email_type)
-        record = self.email_tool.send(to=to, subject=subject, body=body, patient_id=patient.patient_id)
+        record = self.email_tool.send(to=to, subject=subject, body=body, patient_id=patient.patient_id, as_of=self.as_of)
         record["email_type"] = email_type
         self.memory.record_email(patient.patient_id, record)
         trace.observe(f"Email sent (simulated): {record['message_id']}")

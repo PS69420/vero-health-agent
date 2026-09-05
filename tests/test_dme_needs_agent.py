@@ -20,7 +20,7 @@ class FakeEmailTool:
     def __init__(self):
         self.sent = []
 
-    def send(self, to, subject, body, patient_id):
+    def send(self, to, subject, body, patient_id, as_of=None):
         record = {"message_id": f"FAKE-{len(self.sent)}", "to": to, "subject": subject, "sent_at": "2026-01-01T00:00:00"}
         self.sent.append((subject, body, patient_id))
         return record
@@ -81,6 +81,30 @@ class TestDmeNeedsAgent(unittest.TestCase):
         rec = self.agent.evaluate(patient)
         self.assertEqual(rec.action, "no_action")
         self.assertFalse(rec.requires_human_escalation)
+
+    def test_dedup_uses_as_of_not_wall_clock_for_email_cooldown(self):
+        """Regression test companion to the compliance-agent backtest test:
+        the real MockEmailTool must timestamp against `as_of`, not wall-clock
+        time, or a backtest replaying historical dates in one process would
+        misjudge the 14-day doctor-followup cooldown."""
+        from agent.tools.email_tool import MockEmailTool
+        import tempfile
+        real_email = MockEmailTool(Path(tempfile.mkdtemp()))
+        agent = DmeNeedsAgent(email_tool=real_email, memory=self.memory, as_of=date(2026, 1, 1))
+        patient = Patient(
+            patient_id="t5", name="Test, Naive2", dob=date(1980, 1, 1),
+            sleep_studies=[SleepStudy(type="HST_diagnostic", date=date(2025, 12, 1), ahi=40.0, severity="severe")],
+            pap_status=PapStatus(on_pap=False),
+        )
+        agent.evaluate(patient)
+        record = self.memory.emails_for("t5")[0]
+        self.assertTrue(record["sent_at"].startswith("2026-01-01"))
+
+        # 20 simulated days later -- past the 14-day cooldown, evaluated in
+        # the same real-world instant as the first call above.
+        agent2 = DmeNeedsAgent(email_tool=real_email, memory=self.memory, as_of=date(2026, 1, 21))
+        days_since = self.memory.days_since_last_email_of_type("t5", "order_initial_pap", agent2.as_of)
+        self.assertEqual(days_since, 20)
 
 
 if __name__ == "__main__":
