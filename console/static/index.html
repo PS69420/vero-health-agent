@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vapi Test Console</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b21; --panel-2:#1d232b; --line:#2a313b;
+    --ink:#e8edf2; --ink-soft:#9aa7b3; --muted:#6b7684;
+    --good:#2fbf6a; --good-tint:#12291d; --bad:#e5484d; --bad-tint:#2e1315;
+    --accent:#5b8def; --warn:#e0a12e; --warn-tint:#2c230f;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); line-height:1.5;}
+  .wrap{max-width:920px; margin:0 auto; padding:28px 20px 60px;}
+  h1{font-size:22px; margin:0 0 4px;}
+  .sub{color:var(--ink-soft); font-size:13.5px; margin-bottom:20px;}
+  .warn-banner{
+    background:var(--warn-tint); border:1px solid #4a3a12; color:#f0c766; border-radius:10px;
+    padding:12px 16px; font-size:13px; margin-bottom:22px; display:flex; gap:10px; align-items:flex-start;
+  }
+  .warn-banner b{color:#ffd77a;}
+
+  .status-card{
+    display:flex; align-items:center; gap:16px; background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; padding:16px 18px; margin-bottom:24px;
+  }
+  .light{width:22px; height:22px; border-radius:50%; flex:none; background:var(--muted); transition:background .2s, box-shadow .2s;}
+  .light.green{background:var(--good); box-shadow:0 0 0 6px var(--good-tint), 0 0 18px rgba(47,191,106,.6);}
+  .light.red{background:var(--bad); box-shadow:0 0 0 6px var(--bad-tint), 0 0 18px rgba(229,72,77,.5);}
+  .light.pending{background:var(--muted); animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .status-text{flex:1; min-width:0;}
+  .status-text .headline{font-weight:600; font-size:15px;}
+  .status-text .detail{color:var(--ink-soft); font-size:12.5px; margin-top:2px;}
+  .status-meta{font-family:var(--mono); font-size:11px; color:var(--muted); text-align:right; white-space:nowrap;}
+  button.recheck{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--ink-soft); border-radius:8px;
+    padding:7px 12px; font-size:12.5px; cursor:pointer; font-family:var(--font);
+  }
+  button.recheck:hover{border-color:var(--accent); color:var(--ink);}
+
+  .roster{border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--panel);}
+  .row{display:grid; grid-template-columns:1fr auto auto auto; gap:14px; align-items:center; padding:13px 16px; border-bottom:1px solid var(--line);}
+  .row:last-child{border-bottom:none;}
+  .row .name{font-weight:600; font-size:14px;}
+  .row .id{font-family:var(--mono); font-size:11px; color:var(--muted); margin-left:6px;}
+  .row .meta{font-family:var(--mono); font-size:11.5px; color:var(--ink-soft);}
+  .pill{font-size:11px; padding:3px 8px; border-radius:999px; background:var(--panel-2); color:var(--ink-soft); white-space:nowrap;}
+  .pill.warn{background:var(--warn-tint); color:#f0c766;}
+  .pill.bad{background:var(--bad-tint); color:#ff9a9d;}
+  .pill.no-consent{background:var(--bad-tint); color:#ff9a9d;}
+  .call-btn{
+    background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 14px;
+    font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; font-family:var(--font);
+  }
+  .call-btn:disabled{background:var(--panel-2); color:var(--muted); cursor:not-allowed;}
+  .call-btn:not(:disabled):hover{filter:brightness(1.08);}
+  .row-result{grid-column:1/-1; font-size:12.5px; font-family:var(--mono); padding-top:6px; color:var(--ink-soft);}
+  .row-result.ok{color:var(--good);}
+  .row-result.err{color:var(--bad);}
+  .row-history{grid-column:1/-1; font-size:11.5px; color:var(--muted); font-family:var(--mono);}
+  footer{margin-top:22px; color:var(--muted); font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Vapi Test Console</h1>
+  <p class="sub">Local-only. This page runs on your machine, not on claude.ai, so it can make real calls.</p>
+
+  <div class="warn-banner">
+    <span>&#9888;</span>
+    <div><b>Test mode:</b> every "Call now" press rings the real phone configured as <code>VAPI_TEST_OVERRIDE_NUMBER</code> in <code>.env</code>, never a patient's actual number. This is a real, billed Vapi call — it will ring.</div>
+  </div>
+
+  <div class="status-card">
+    <div class="light pending" id="light"></div>
+    <div class="status-text">
+      <div class="headline" id="statusHeadline">Checking Vapi connection&hellip;</div>
+      <div class="detail" id="statusDetail">&nbsp;</div>
+    </div>
+    <div class="status-meta" id="statusMeta"></div>
+    <button class="recheck" id="recheckBtn" type="button">Recheck now</button>
+  </div>
+
+  <div class="roster" id="roster"><div style="padding:20px;color:var(--muted);font-size:13px;">Loading patients&hellip;</div></div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  let ready = false;
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  const DME_LABEL = {order_initial_pap:'Initial PAP order', equipment_upgrade:'Equipment upgrade', supply_resupply:'Resupply logged', no_action:'No DME action'};
+  const COMP_LABEL = {log_compliant:'Compliant', schedule_urgent_outreach:'Urgent outreach due', schedule_early_outreach:'Early outreach due', schedule_maintenance_outreach:'Maintenance outreach due', escalate_human:'Escalated', none:'Monitoring'};
+
+  async function refreshStatus(){
+    const light = document.getElementById('light');
+    light.className = 'light pending';
+    try{
+      const res = await fetch('/api/status');
+      const data = await res.json();
+      ready = !!data.ready;
+      light.className = 'light ' + (ready ? 'green' : 'red');
+      document.getElementById('statusHeadline').textContent = ready ? 'Ready to call' : 'Not ready';
+      document.getElementById('statusDetail').textContent = data.detail || '';
+    }catch(e){
+      ready = false;
+      light.className = 'light red';
+      document.getElementById('statusHeadline').textContent = 'Not ready';
+      document.getElementById('statusDetail').textContent = 'Console server unreachable: ' + e;
+    }
+    document.getElementById('statusMeta').textContent = 'checked ' + new Date().toLocaleTimeString();
+    document.querySelectorAll('.call-btn').forEach(b => { b.disabled = !ready; });
+  }
+
+  async function loadRoster(){
+    const res = await fetch('/api/patients');
+    const data = await res.json();
+    document.getElementById('footer').textContent = 'As of ' + data.as_of + ' · ' + data.patients.length + ' patients · status auto-rechecks every 20s';
+    const rows = data.patients.map(p => {
+      const lastManual = (p.manual_calls||[]).slice(-1)[0];
+      const historyLine = lastManual
+        ? `Last manual call: ${esc(lastManual.status||'unknown')} (${esc(lastManual.call_id||'')}) at ${esc((lastManual.requested_at||'').replace('T',' ').slice(0,16))}`
+        : '';
+      return `<div class="row" data-pid="${esc(p.patient_id)}">
+        <div><span class="name">${esc(p.name)}</span><span class="id">${esc(p.patient_id)}</span></div>
+        <div class="meta">${p.day_of_therapy>=0 ? 'day '+p.day_of_therapy+' &middot; '+p.pct_nights_ge_4hr+'%' : 'no data'}</div>
+        <div>
+          <span class="pill">${esc(DME_LABEL[p.dme_action]||p.dme_action)}</span>
+          <span class="pill ${p.compliance_escalated?'bad':(p.compliant?'':'warn')}">${esc(COMP_LABEL[p.compliance_action]||p.compliance_action)}</span>
+          ${!p.ai_contact_consent ? '<span class="pill no-consent">no AI consent</span>' : ''}
+        </div>
+        <button class="call-btn" type="button" ${ready?'':'disabled'}>Call now</button>
+        ${historyLine ? `<div class="row-history">${historyLine}</div>` : ''}
+      </div>`;
+    }).join('');
+    document.getElementById('roster').innerHTML = rows;
+
+    document.querySelectorAll('.call-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('.row');
+        const pid = row.dataset.pid;
+        btn.disabled = true;
+        btn.textContent = 'Calling…';
+        const existing = row.querySelector('.row-result');
+        if (existing) existing.remove();
+        const resultEl = document.createElement('div');
+        row.appendChild(resultEl);
+        try{
+          const res = await fetch('/api/call/' + encodeURIComponent(pid), {method:'POST'});
+          const data = await res.json();
+          if (res.ok){
+            resultEl.className = 'row-result ok';
+            resultEl.textContent = `Call placed — id ${data.call_id}, status ${data.status}, to ${data.to_number}`;
+          } else {
+            resultEl.className = 'row-result err';
+            resultEl.textContent = 'Failed: ' + (data.error || 'unknown error');
+          }
+        }catch(e){
+          resultEl.className = 'row-result err';
+          resultEl.textContent = 'Failed: ' + e;
+        }
+        btn.textContent = 'Call now';
+        btn.disabled = !ready;
+      });
+    });
+  }
+
+  document.getElementById('recheckBtn').addEventListener('click', refreshStatus);
+  refreshStatus();
+  loadRoster();
+  setInterval(refreshStatus, 20000);
+})();
+</script>
+</body>
+</html>

@@ -14,11 +14,17 @@ An AI-agent prototype for a sleep center + DME company that:
    before the 90-day insurance cutoff if still non-compliant — storing every
    transcript so it never nags the same patient twice in one week.
 
-**This build makes zero network calls.** Every "EMR", "AirView / DME Link",
-"email", and "phone call" is a local mock reading/writing files in `data/` and
-`output/`. That's intentional — you asked for a self-contained test system
-using your sample patient notes, compliance reports, and sleep studies before
-connecting to real systems (EMR, AirView, Vapi, etc.).
+**The automated path (`main.py run-all`, and the compliance agent's scheduled
+outreach) still makes zero network calls.** Every "EMR", "AirView / DME Link",
+and "email" is a local mock reading/writing files in `data/` and `output/`,
+and automated compliance calls still go through the safe `MockVoiceCallTool`
+(a simulated transcript, not a real phone call). That's intentional — nothing
+gets auto-dialed without a human in the loop yet.
+
+**The one real integration so far is manual, human-triggered Vapi calls** via
+the local test console (`console/server.py`) — see [Local Vapi test
+console](#local-vapi-test-console) below. That's the only thing in this repo
+that makes a real network call or rings a real phone.
 
 ## Quick start
 
@@ -135,15 +141,69 @@ secret.
   former gets framed around the insurance deadline; the latter is treated as
   routine maintenance coaching, which is the clinically accurate framing.
 
+## Local Vapi test console
+
+`console/server.py` is a small local web server (standard library only, no
+Flask) that connects to the **real** Vapi API — the one thing in this repo
+that makes a real network call and rings a real phone. It exists separately
+from the claude.ai dashboard artifact on purpose: a published artifact runs
+in a browser sandbox that only allows loading fonts/scripts from a short CDN
+allowlist, so it **cannot** call Vapi's API (or any other external API) no
+matter how it's written, and it would be unsafe to ship a real Vapi API key
+inside a page's client-side JavaScript anyway (anyone viewing the page could
+read it out of the source). This console runs only on your machine instead,
+so it has ordinary outbound network access and never exposes the key to a
+browser tab you might share.
+
+**Setup (one time):**
+```bash
+cp .env.example .env
+# then fill in VAPI_API_KEY, VAPI_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID,
+# and VAPI_TEST_OVERRIDE_NUMBER in .env
+```
+
+**Run it:**
+```bash
+python3 console/server.py          # opens http://localhost:8787 in your browser
+```
+
+What it does:
+- A **status light** at the top does a real, read-only check against the Vapi
+  API (confirms your API key, assistant, and phone number are all valid and
+  reachable) and re-checks automatically every 20 seconds — that's your proof
+  the connection is actually live, not just configured. Green = ready to
+  call, red = something's wrong (with the real error shown).
+- The **patient roster** below it is computed by the same real agent logic as
+  `main.py run-all`, through the same safe mock tools — loading this page
+  never sends a real email or places a real call on its own.
+- Each patient has a **"Call now" button**, enabled only while the light is
+  green. Pressing it places one real Vapi call, right then, to whatever
+  number is set as `VAPI_TEST_OVERRIDE_NUMBER` in `.env` — **every** patient's
+  button rings that same number while in test mode, regardless of whose name
+  is on it, since the sample patient data doesn't carry real phone numbers.
+  The call passes that patient's real compliance data (usage %, AHI, device,
+  etc.) to the assistant as context, matching the `{{variables}}` in its
+  configured system prompt.
+- Every manually-placed call is logged to `output/memory/episodic_memory.json`
+  under a separate `manual_calls` bucket, kept apart from the automated
+  agent's (still-mocked) `calls` bucket so the two are never confused.
+
+This is a real, billed action against your Vapi account each time you press
+the button — there's no simulate-only mode for this particular button by
+design, since the whole point is proving the live connection works.
+
 ## Next steps once you're happy with the logic
 
 - Swap `MockEmrTool` for your real EMR connector.
 - Swap `MockComplianceDataTool` for the real AirView / DME Link connector(s) —
   you'll likely need one per vendor (ResMed, ReactHealth, etc.), each
   normalizing into `ComplianceSnapshot`.
-- Swap `MockVoiceCallTool` for a real `VapiCallTool` and set up the Vapi
-  webhook to write the finished call transcript back into `JsonEpisodicMemory`
-  (or a real DB) in the same shape used here.
+- `agent/tools/vapi_call_tool.py` is a real Vapi connector, but today it's only
+  wired into the manual console (see below), not the automated
+  `ComplianceAgent` scheduling path. Once you're comfortable with real calls
+  firing on a schedule instead of a button press, swap `MockVoiceCallTool` for
+  it there too, remove the `VAPI_TEST_OVERRIDE_NUMBER` override, and wire real
+  patient phone numbers into the EMR data.
 - Swap `MockEmailTool` for SMTP/Graph so doctor emails actually send, and
   point `doctor_email` at real addresses (currently a placeholder).
 - Decide on a run cadence (e.g. a nightly cron / scheduled job calling

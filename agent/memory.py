@@ -64,14 +64,26 @@ class JsonEpisodicMemory:
 
     def _bucket(self, patient_id: str) -> dict:
         bucket = self._data["patients"].setdefault(
-            patient_id, {"calls": [], "decisions": [], "emails": [], "human_tasks": []}
+            patient_id, {"calls": [], "decisions": [], "emails": [], "human_tasks": [], "manual_calls": []}
         )
-        bucket.setdefault("human_tasks", [])  # older memory files predate this bucket
+        # older memory files predate these buckets
+        bucket.setdefault("human_tasks", [])
+        bucket.setdefault("manual_calls", [])
         return bucket
 
     def record_call(self, patient_id: str, call_record: dict):
         self._bucket(patient_id)["calls"].append(call_record)
         self._save()
+
+    def record_manual_call(self, patient_id: str, call_record: dict):
+        """A real, human-triggered Vapi call (console 'Call now' button) --
+        kept separate from record_call()'s automated/mock bucket so the two
+        are never confused in reports or dashboards."""
+        self._bucket(patient_id)["manual_calls"].append(call_record)
+        self._save()
+
+    def manual_calls_for(self, patient_id: str) -> list[dict]:
+        return self._bucket(patient_id).get("manual_calls", [])
 
     def record_decision(self, patient_id: str, decision_record: dict):
         self._bucket(patient_id)["decisions"].append(decision_record)
