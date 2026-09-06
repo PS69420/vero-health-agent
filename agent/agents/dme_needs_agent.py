@@ -16,6 +16,12 @@ decides whether:
 When a physician order is warranted, drafts (and "sends", via the mock
 EmailTool) an email requesting it. Nothing here calls a real EMR, AirView, or
 email API -- see agent/tools/*.py.
+
+Before drafting an equipment-upgrade email, this agent also searches semantic
+memory (agent/semantic_memory.py) for what the patient has said on past
+compliance outreach calls, and cites it in the email when found -- e.g. a
+recurring mask-leak complaint supports the case for a mask/interface change
+alongside whatever chart data triggered the recommendation.
 """
 
 from __future__ import annotations
@@ -26,7 +32,29 @@ from agent import config
 from agent.knowledge_base import DME_ESCALATION_FLAGS as _ESCALATION_FLAGS
 from agent.memory import JsonEpisodicMemory, ShortTermTrace
 from agent.models import DmeRecommendation, Patient
+from agent.semantic_memory import NullVectorStore, VectorStore, extract_patient_quote
 from agent.tools.base import EmailTool
+
+# Same recall query the compliance agent uses (agents/compliance_agent.py) --
+# broad enough to surface whatever barrier a patient has actually mentioned,
+# so a doctor email can cite it instead of only citing chart/device data.
+_RECALL_QUERY = "barriers reasons for not using CPAP mask leak discomfort forgetting noise travel disruption"
+
+
+def _recall_lines(hits: list[dict]) -> list[str]:
+    """Turns semantic-memory search hits (call transcripts) into short,
+    citable lines for a doctor email -- date, barrier, and the patient's own
+    words where we can pull them out of the stored transcript text."""
+    lines = []
+    for hit in hits:
+        meta = hit.get("metadata", {})
+        quote = extract_patient_quote(hit["text"])
+        barrier = (meta.get("barrier") or "").replace("_", " ")
+        piece = f"{meta.get('date', 'unknown date')}: patient reported {barrier or 'a barrier to use'}"
+        if quote:
+            piece += f" (\"{quote}\")"
+        lines.append(piece)
+    return lines
 
 
 def _draft_initial_pap_email(patient: Patient, diagnostic) -> tuple[str, str]:
@@ -44,7 +72,7 @@ def _draft_initial_pap_email(patient: Patient, diagnostic) -> tuple[str, str]:
     return subject, body
 
 
-def _draft_equipment_change_email(patient: Patient, reasons: list[str], titration) -> tuple[str, str]:
+def _draft_equipment_change_email(patient: Patient, reasons: list[str], titration, recall_hits: list[dict]) -> tuple[str, str]:
     subject = f"Updated PAP Order Requested - {patient.name} (DOB {patient.dob.isoformat()})"
     reason_lines = "\n".join(f"  - {r}" for r in reasons)
     titration_line = ""
@@ -54,11 +82,16 @@ def _draft_equipment_change_email(patient: Patient, reasons: list[str], titratio
             f"{titration.pressure_cmh2o} cmH2O, residual AHI {titration.ahi_on_pressure}."
             + (f" Study note: {titration.notes}" if titration.notes else "")
         )
+    recall_block = ""
+    if recall_hits:
+        recall_lines = "\n".join(f"  - {line}" for line in _recall_lines(recall_hits))
+        recall_block = f"\n\nRecent compliance outreach calls also noted:\n{recall_lines}"
     body = (
         f"Dr. [Ordering Physician],\n\n"
         f"{patient.name}'s current therapy appears to need an updated order based on:\n"
         f"{reason_lines}\n"
-        f"{titration_line}\n\n"
+        f"{titration_line}"
+        f"{recall_block}\n\n"
         f"Requesting a signed updated order reflecting the recommended settings/device change "
         f"above.\n\n"
         f"-- {config.ORG_NAME} DME Team"
@@ -67,10 +100,12 @@ def _draft_equipment_change_email(patient: Patient, reasons: list[str], titratio
 
 
 class DmeNeedsAgent:
-    def __init__(self, email_tool: EmailTool, memory: JsonEpisodicMemory, as_of: date | None = None):
+    def __init__(self, email_tool: EmailTool, memory: JsonEpisodicMemory, as_of: date | None = None,
+                 semantic_memory: VectorStore = NullVectorStore()):
         self.email_tool = email_tool
         self.memory = memory
         self.as_of = as_of or date.today()
+        self.semantic_memory = semantic_memory
 
     def _send_order_email(self, patient: Patient, email_type: str, to: str, subject: str, body: str, trace) -> str | None:
         """Sends (simulated) unless we already asked for this same thing recently.
@@ -213,7 +248,11 @@ class DmeNeedsAgent:
                     requires_human_escalation=True, escalation_reasons=escalation_reasons,
                     reasoning_trace=trace.steps,
                 )
-            subject, body = _draft_equipment_change_email(patient, upgrade_reasons, titration)
+            recall_hits = self.semantic_memory.search(patient.patient_id, _RECALL_QUERY, top_k=2)
+            if recall_hits:
+                trace.observe(f"Found {len(recall_hits)} relevant past compliance-call note(s) in semantic memory -- including in the email.")
+                rationale.extend(_recall_lines(recall_hits))
+            subject, body = _draft_equipment_change_email(patient, upgrade_reasons, titration, recall_hits)
             skip_note = self._send_order_email(patient, "equipment_upgrade", doctor_email, subject, body, trace)
             if skip_note:
                 rationale.append(skip_note)

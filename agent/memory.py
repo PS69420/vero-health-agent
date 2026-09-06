@@ -62,6 +62,9 @@ class JsonEpisodicMemory:
         with open(self.path, "w") as f:
             json.dump(self._data, f, indent=2, default=_json_default)
 
+    def all_patient_ids(self) -> list[str]:
+        return list(self._data.get("patients", {}).keys())
+
     def _bucket(self, patient_id: str) -> dict:
         bucket = self._data["patients"].setdefault(
             patient_id, {"calls": [], "decisions": [], "emails": [], "human_tasks": [], "manual_calls": []}
@@ -84,6 +87,16 @@ class JsonEpisodicMemory:
 
     def manual_calls_for(self, patient_id: str) -> list[dict]:
         return self._bucket(patient_id).get("manual_calls", [])
+
+    def update_manual_call(self, patient_id: str, call_id: str, updates: dict):
+        """Merges `updates` into an existing manual_calls record matched by
+        call_id -- used once a real Vapi call ends and its transcript
+        becomes available (place_manual_call() returns before that happens)."""
+        for record in self._bucket(patient_id)["manual_calls"]:
+            if record.get("call_id") == call_id:
+                record.update(updates)
+                self._save()
+                return
 
     def record_decision(self, patient_id: str, decision_record: dict):
         self._bucket(patient_id)["decisions"].append(decision_record)

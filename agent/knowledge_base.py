@@ -2,14 +2,12 @@
 Small, static "knowledge base" of policy/clinical reference text and the
 per-agent escalation-flag reason tables.
 
-Content lives in data/knowledge_base.json; this module just loads it. This
-stands in for the RAG/semantic-memory layer in the fuller design: right now
-it's a plain JSON lookup, which is all this scale needs. If you later want
-the agent to answer open-ended questions ("why does Medicare require this?")
-instead of just citing fixed snippets, swap this module for an
-embedding-based retriever over the same source documents -- the call sites
-(agents/*.py, tools/voice_tool.py) don't need to change, they just want data
-back for a given key.
+Content lives in data/knowledge_base.json; this module just loads it. This is
+static, hand-authored reference text -- fixed policy/clinical snippets that
+don't vary per patient. For what a SPECIFIC patient has actually said in past
+calls, see agent/semantic_memory.py instead, which is the real, per-patient
+searchable memory layer this module's older docstring used to describe as a
+placeholder.
 """
 
 import json
@@ -25,6 +23,7 @@ ESCALATION_POLICY: str = _kb["escalation_policy"]
 BARRIER_TIPS: dict = _kb["barrier_tips"]
 BARRIER_PATIENT_LINES: dict = _kb["barrier_patient_lines"]
 BARRIER_KEYWORDS: dict = _kb["barrier_keywords"]
+BARRIER_FOLLOWUP_LINES: dict = _kb["barrier_followup_lines"]
 
 # Flags that mean "don't auto-act, a clinician needs to look at this" --
 # one reason-table per agent, since the same clinical flag can warrant a

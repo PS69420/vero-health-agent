@@ -14,6 +14,7 @@ from pathlib import Path
 from agent.agents.compliance_agent import ComplianceAgent
 from agent.agents.dme_needs_agent import DmeNeedsAgent
 from agent.memory import JsonEpisodicMemory
+from agent.semantic_memory import LocalTfidfVectorStore
 from agent.tools.compliance_data_tool import MockComplianceDataTool
 from agent.tools.email_tool import MockEmailTool
 from agent.tools.emr_tool import MockEmrTool
@@ -38,16 +39,18 @@ def build_default_toolset(output_dir: Path = OUTPUT_DIR):
     voice = MockVoiceCallTool()
     human_queue = MockHumanTaskQueueTool()
     memory = JsonEpisodicMemory(output_dir / "memory" / "episodic_memory.json")
-    return emr, compliance_data, email, voice, human_queue, memory
+    semantic_memory = LocalTfidfVectorStore(output_dir / "memory" / "semantic_index.json")
+    return emr, compliance_data, email, voice, human_queue, memory, semantic_memory
 
 
 def run_all(as_of: date | None = None, output_dir: Path = OUTPUT_DIR) -> dict:
     as_of = as_of or date.today()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    emr, compliance_data, email, voice, human_queue, memory = build_default_toolset(output_dir)
-    dme_agent = DmeNeedsAgent(email_tool=email, memory=memory, as_of=as_of)
-    compliance_agent = ComplianceAgent(voice_tool=voice, human_queue_tool=human_queue, memory=memory, as_of=as_of)
+    emr, compliance_data, email, voice, human_queue, memory, semantic_memory = build_default_toolset(output_dir)
+    dme_agent = DmeNeedsAgent(email_tool=email, memory=memory, as_of=as_of, semantic_memory=semantic_memory)
+    compliance_agent = ComplianceAgent(voice_tool=voice, human_queue_tool=human_queue, memory=memory, as_of=as_of,
+                                        semantic_memory=semantic_memory)
 
     patients = emr.list_patients()
 

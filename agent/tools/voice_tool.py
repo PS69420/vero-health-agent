@@ -16,7 +16,7 @@ import hashlib
 from datetime import datetime
 from typing import Any
 
-from agent.knowledge_base import BARRIER_KEYWORDS, BARRIER_PATIENT_LINES, BARRIER_TIPS
+from agent.knowledge_base import BARRIER_FOLLOWUP_LINES, BARRIER_KEYWORDS, BARRIER_PATIENT_LINES, BARRIER_TIPS
 from agent.models import ComplianceSnapshot, Patient
 from agent.tools.base import VoiceCallTool
 from agent import config
@@ -73,8 +73,15 @@ class MockVoiceCallTool(VoiceCallTool):
 
         snapshot: ComplianceSnapshot | None = context.get("snapshot")
         prior_calls: list[dict] = context.get("prior_calls", [])
+        # Semantic recall of what THIS patient said on a past call (see
+        # agent/semantic_memory.py), passed in by ComplianceAgent -- lets the
+        # call reference the actual prior conversation instead of a generic
+        # "good to talk with you again."
+        recall: dict | None = context.get("recall")
         first = _first_name(patient.name)
-        barrier = _infer_barrier(patient)
+        barrier = (recall or {}).get("barrier") or _infer_barrier(patient)
+        if barrier not in BARRIER_TIPS:
+            barrier = _infer_barrier(patient)
         tip = BARRIER_TIPS[barrier]
 
         transcript = []
@@ -86,7 +93,9 @@ class MockVoiceCallTool(VoiceCallTool):
                       f"{config.ORG_NAME} about your CPAP therapy.")
         say("patient", f"Yes, this is {first}.")
 
-        if prior_calls:
+        if recall:
+            say("agent", BARRIER_FOLLOWUP_LINES.get(barrier, "Good to talk with you again -- just following up on our last call about your usage."))
+        elif prior_calls:
             say("agent", "Good to talk with you again -- just following up on our last call "
                           "about your usage.")
 

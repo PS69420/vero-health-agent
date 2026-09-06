@@ -106,6 +106,30 @@ class TestDmeNeedsAgent(unittest.TestCase):
         days_since = self.memory.days_since_last_email_of_type("t5", "order_initial_pap", agent2.as_of)
         self.assertEqual(days_since, 20)
 
+    def test_equipment_upgrade_email_cites_semantic_memory_recall(self):
+        """A doctor email should be able to cite what a patient actually said
+        on a prior compliance call, not just chart/device data -- real vector
+        store, no fakes."""
+        from agent.semantic_memory import LocalTfidfVectorStore
+        semantic_memory = LocalTfidfVectorStore(self.tmpdir / "semantic.json")
+        semantic_memory.add(
+            "t6", doc_id="call-1",
+            text="agent: how's it going\npatient: the mask keeps leaking air and waking me up",
+            metadata={"date": "2026-01-05", "barrier": "mask_leak", "source": "mock_compliance_call"},
+        )
+        agent = DmeNeedsAgent(email_tool=self.email, memory=self.memory, semantic_memory=semantic_memory)
+        patient = Patient(
+            patient_id="t6", name="Test, Recall", dob=date(1980, 1, 1),
+            sleep_studies=[SleepStudy(type="CPAP_titration", date=date(2026, 1, 1), pressure_cmh2o=15, ahi_on_pressure=20.0)],
+            pap_status=PapStatus(on_pap=True, device_type="CPAP", pressure="15"),
+        )
+        rec = agent.evaluate(patient)
+        self.assertEqual(rec.action, "equipment_upgrade")
+        self.assertEqual(len(self.email.sent), 1)
+        _, body, _ = self.email.sent[0]
+        self.assertIn("mask leak", body)
+        self.assertIn("Recent compliance outreach calls", body)
+
 
 if __name__ == "__main__":
     unittest.main()

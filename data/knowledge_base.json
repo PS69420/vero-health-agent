@@ -28,6 +28,14 @@
     "travel_disruption": ["adherence_declining"]
   },
 
+  "barrier_followup_lines": {
+    "mask_leak": "Last time we spoke you mentioned the mask was leaking -- has refitting it helped at all?",
+    "discomfort": "When we talked before, you'd mentioned the mask felt uncomfortable -- has that gotten any better?",
+    "noise": "You'd mentioned the machine seemed louder than expected last time -- is that still going on?",
+    "forgetting": "Last time you mentioned some nights you just forgot to put it on -- how's that been since?",
+    "travel_disruption": "You'd mentioned travel had thrown off your routine last time -- how's it been since you got back into it?"
+  },
+
   "escalation_flags": {
     "dme_needs": {
       "central_apnea_component_at_diagnosis": "Central/mixed apnea component present -- not a routine CPAP-pressure fix.",

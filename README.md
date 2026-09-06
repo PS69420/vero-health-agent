@@ -83,23 +83,37 @@ agent/
                           Medicare 70%/30-day rule, outreach timing) in one
                           place, so ops can tune policy without touching logic
   models.py            <- shared data shapes (Patient, ComplianceSnapshot, ...)
-  knowledge_base.py     <- static policy/clinical reference text (stands in for
-                          a RAG layer later, if you want the agent answering
-                          open-ended questions instead of citing fixed rules)
-  memory.py              <- long-term memory (JSON file today; swap for a real
-                          DB later) + short-term per-run reasoning trace
+  knowledge_base.py     <- static, hand-authored policy/clinical reference text
+                          (fixed snippets that don't vary per patient)
+  memory.py              <- episodic long-term memory (JSON file today; swap
+                          for a real DB later): what happened, and when
+  semantic_memory.py       <- SEARCHABLE long-term memory: what a patient has
+                          actually said on past calls. Real local vector
+                          search (TF-IDF + cosine similarity, stdlib only)
+                          today; swap for an embedding-API-backed store later
+                          behind the same VectorStore interface
   tools/
     base.py                <- ABSTRACT interfaces: EmrTool, ComplianceDataTool,
-                             EmailTool, VoiceCallTool
+                             EmailTool, VoiceCallTool, HumanTaskQueueTool
     emr_tool.py              <- Mock*, reads data/patients.json
     compliance_data_tool.py   <- Mock*, reads data/compliance.json
     email_tool.py              <- Mock*, writes output/emails/*.txt
     voice_tool.py                <- Mock*, generates a deterministic simulated
                                    call transcript (no LLM/API call involved)
+    human_queue_tool.py           <- Mock*, logs a pending callback task for
+                                   patients who haven't consented to AI contact
+    vapi_call_tool.py               <- REAL Vapi connector -- the one thing in
+                                   this repo that makes a live network call.
+                                   Only used by console/server.py; see
+                                   "Local Vapi test console" below
   agents/
     dme_needs_agent.py          <- DME Needs Agent
     compliance_agent.py          <- Compliance Agent
   orchestrator.py                 <- wires the above together, runs the roster
+console/
+  server.py                        <- local-only web server for real,
+                                   human-triggered Vapi calls (see below)
+  static/index.html                  <- its frontend
 ```
 
 **The only thing that changes when you're ready to go live is `agent/tools/`.**
@@ -121,6 +135,44 @@ A natural place to introduce real credentials later is environment variables
 (e.g. `AIRVIEW_API_KEY`, `VAPI_API_KEY`) read inside the new tool
 implementations — keep them out of `config.py` so this repo never holds a
 secret.
+
+## Semantic memory — giving the agent recall of what patients actually said
+
+`agent/memory.py` (episodic) answers "did we call this patient, and when."
+`agent/semantic_memory.py` answers "what did they say" — a real, working
+per-patient vector search over call transcripts, so the next call or doctor
+email can reference the actual prior conversation instead of starting cold
+each time. It's a genuine vector store (TF-IDF term vectors + cosine
+similarity), computed with nothing but the standard library — no embedding
+API, no cost, no extra dependency, which is the right size for a handful of
+short transcripts per patient. Swap `LocalTfidfVectorStore` for a real
+embedding-API-backed store (OpenAI/Voyage + Chroma/pgvector/Pinecone) behind
+the same `VectorStore` interface once transcript volume or search quality
+calls for it — same mock-now/real-later pattern as every tool in this repo.
+
+Two places consume it, both real and tested (see `tests/test_semantic_memory.py`,
+plus the recall-specific tests in each agent's test file):
+
+- **Before placing another compliance call** (`ComplianceAgent`), it searches
+  for what the patient said last time and passes it into the call as
+  `context["recall"]` — so instead of "good to talk with you again," the
+  transcript opens with e.g. *"Last time we spoke you mentioned the mask was
+  leaking — has refitting it helped at all?"* (see `BARRIER_FOLLOWUP_LINES` in
+  `data/knowledge_base.json`).
+- **Before drafting an equipment-upgrade doctor email** (`DmeNeedsAgent`), it
+  searches the same memory and cites relevant past complaints in the email
+  body, with the patient's actual words where available — supporting the
+  equipment-change request with more than just chart/device data.
+- **Real Vapi calls get it too**: the console passes a `previousCallNotes`
+  variable built from the same search into every manual call. It only does
+  something once your Vapi assistant's prompt actually references
+  `{{previousCallNotes}}` — Vapi silently ignores variables a prompt doesn't
+  use, so this is a no-op until you add that placeholder.
+- **Real Vapi transcripts get indexed too, once they exist**: placing a call
+  returns before it's actually happened, so `console/server.py`'s
+  `sync_manual_call_transcripts()` polls Vapi for any call that has since
+  ended and indexes its transcript/summary the same way — checked every time
+  the console's patient list refreshes.
 
 ## Notable design decisions worth knowing about
 
@@ -177,16 +229,24 @@ What it does:
   `main.py run-all`, through the same safe mock tools — loading this page
   never sends a real email or places a real call on its own.
 - Each patient has a **"Call now" button**, enabled only while the light is
-  green. Pressing it places one real Vapi call, right then, to whatever
-  number is set as `VAPI_TEST_OVERRIDE_NUMBER` in `.env` — **every** patient's
-  button rings that same number while in test mode, regardless of whose name
-  is on it, since the sample patient data doesn't carry real phone numbers.
-  The call passes that patient's real compliance data (usage %, AHI, device,
-  etc.) to the assistant as context, matching the `{{variables}}` in its
-  configured system prompt.
+  green *and* the patient has consented to AI contact (`ai_contact_consent`
+  in their record) — a patient without consent shows "No AI consent" and
+  stays disabled regardless of the light, enforced server-side too (not just
+  a disabled button) so a stale page or direct request can't bypass it.
+  Pressing it places one real Vapi call, right then, to whatever number is
+  set as `VAPI_TEST_OVERRIDE_NUMBER` in `.env` — **every** patient's button
+  rings that same number while in test mode, regardless of whose name is on
+  it, since the sample patient data doesn't carry real phone numbers. The
+  call passes that patient's real compliance data (usage %, AHI, device,
+  etc.) *and* a summary of what they said on past calls (see "Semantic
+  memory" above) to the assistant as context, matching the `{{variables}}`
+  in its configured system prompt.
 - Every manually-placed call is logged to `output/memory/episodic_memory.json`
   under a separate `manual_calls` bucket, kept apart from the automated
-  agent's (still-mocked) `calls` bucket so the two are never confused.
+  agent's (still-mocked) `calls` bucket so the two are never confused. Since
+  a real call hasn't happened yet the instant it's placed, the console polls
+  Vapi for the finished transcript on every roster refresh and indexes it
+  into semantic memory once it's available.
 
 This is a real, billed action against your Vapi account each time you press
 the button — there's no simulate-only mode for this particular button by

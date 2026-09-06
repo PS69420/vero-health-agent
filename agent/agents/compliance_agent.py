@@ -29,6 +29,14 @@ when the patient has consented to AI contact, or the mock HumanTaskQueueTool
 (agent/tools/human_queue_tool.py) when they haven't. Either way the outcome is
 written to long-term memory so future runs know the outreach history for that
 patient regardless of which channel reached them.
+
+Before placing an AI call, this agent also searches semantic memory
+(agent/semantic_memory.py) for what the patient said on past calls, and
+passes it into the call as `context["recall"]` -- so a repeat call can open
+with "last time you mentioned the mask was leaking" instead of starting from
+zero. The transcript from every AI call is indexed back into semantic memory
+afterward so the next call (or a doctor email drafted by DmeNeedsAgent) can
+find it.
 """
 
 from __future__ import annotations
@@ -39,16 +47,22 @@ from agent import config
 from agent.knowledge_base import COMPLIANCE_ESCALATION_FLAGS as _ESCALATION_FLAGS
 from agent.memory import JsonEpisodicMemory, ShortTermTrace
 from agent.models import ComplianceDecision, ComplianceSnapshot, Patient
+from agent.semantic_memory import NullVectorStore, VectorStore
 from agent.tools.base import HumanTaskQueueTool, VoiceCallTool
+
+# What we ask semantic memory for when about to place another call -- broad
+# enough to match whichever barrier a patient has actually mentioned before.
+_RECALL_QUERY = "barriers reasons for not using CPAP mask leak discomfort forgetting noise travel disruption"
 
 
 class ComplianceAgent:
     def __init__(self, voice_tool: VoiceCallTool, human_queue_tool: HumanTaskQueueTool,
-                 memory: JsonEpisodicMemory, as_of: date):
+                 memory: JsonEpisodicMemory, as_of: date, semantic_memory: VectorStore = NullVectorStore()):
         self.voice_tool = voice_tool
         self.human_queue_tool = human_queue_tool
         self.memory = memory
         self.as_of = as_of
+        self.semantic_memory = semantic_memory
 
     def evaluate(self, patient: Patient, snapshot: ComplianceSnapshot | None) -> ComplianceDecision:
         trace = ShortTermTrace()
@@ -149,15 +163,36 @@ class ComplianceAgent:
                     outreach_channel="human", reasoning_trace=trace.steps,
                 )
 
+            recall_hits = self.semantic_memory.search(patient.patient_id, _RECALL_QUERY, top_k=1)
+            recall = None
+            if recall_hits:
+                recall = recall_hits[0]["metadata"]
+                trace.observe(f"Recalled prior call content (barrier: {recall.get('barrier', 'unknown')}) from semantic memory.")
+
             trace.act("place_compliance_call", purpose)
             call_record = self.voice_tool.place_call(
                 patient, call_purpose=purpose,
-                context={"snapshot": snapshot, "prior_calls": prior_outreach, "day_of_therapy": day_of_therapy, "as_of": self.as_of},
+                context={"snapshot": snapshot, "prior_calls": prior_outreach, "day_of_therapy": day_of_therapy,
+                         "as_of": self.as_of, "recall": recall},
             )
             self.memory.record_call(patient.patient_id, call_record)
             outcome = call_record.get("outcome_tag")
             trace.observe(f"Call outcome: {outcome}.")
             rationale.append(f"Placed outreach call ({purpose}); outcome: {outcome}.")
+
+            transcript = call_record.get("transcript") or []
+            if transcript:
+                transcript_text = "\n".join(f"{t['speaker']}: {t['text']}" for t in transcript)
+                self.semantic_memory.add(
+                    patient.patient_id, doc_id=call_record["call_id"], text=transcript_text,
+                    metadata={
+                        "date": call_record["timestamp"][:10],
+                        "purpose": purpose,
+                        "outcome": outcome,
+                        "barrier": call_record.get("barrier_identified"),
+                        "source": "mock_compliance_call",
+                    },
+                )
             escalate = bool(call_record.get("escalate_to_rt"))
             esc_reasons = ["Patient call indicated ongoing difficulty -- referred to a Respiratory Therapist for direct follow-up."] if escalate else []
             return ComplianceDecision(

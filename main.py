@@ -39,8 +39,8 @@ def cmd_list_patients(_args):
 
 def cmd_dme_check(args):
     as_of = _parse_as_of(args.as_of)
-    emr, compliance_data, email, _voice, _human_queue, memory = build_default_toolset()
-    agent = DmeNeedsAgent(email_tool=email, memory=memory, as_of=as_of)
+    emr, compliance_data, email, _voice, _human_queue, memory, semantic_memory = build_default_toolset()
+    agent = DmeNeedsAgent(email_tool=email, memory=memory, as_of=as_of, semantic_memory=semantic_memory)
     results = [
         agent.evaluate(p, compliance_data.get_latest_snapshot(p.patient_id))
         for p in emr.list_patients()
@@ -50,8 +50,9 @@ def cmd_dme_check(args):
 
 def cmd_compliance_check(args):
     as_of = _parse_as_of(args.as_of)
-    emr, compliance_data, _email, voice, human_queue, memory = build_default_toolset()
-    agent = ComplianceAgent(voice_tool=voice, human_queue_tool=human_queue, memory=memory, as_of=as_of)
+    emr, compliance_data, _email, voice, human_queue, memory, semantic_memory = build_default_toolset()
+    agent = ComplianceAgent(voice_tool=voice, human_queue_tool=human_queue, memory=memory, as_of=as_of,
+                             semantic_memory=semantic_memory)
     results = [
         agent.evaluate(p, compliance_data.get_latest_snapshot(p.patient_id))
         for p in emr.list_patients()

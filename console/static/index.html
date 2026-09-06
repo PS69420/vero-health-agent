@@ -136,9 +136,16 @@
     document.getElementById('footer').textContent = 'As of ' + data.as_of + ' · ' + data.patients.length + ' patients · status auto-rechecks every 20s';
     const rows = data.patients.map(p => {
       const lastManual = (p.manual_calls||[]).slice(-1)[0];
-      const historyLine = lastManual
-        ? `Last manual call: ${esc(lastManual.status||'unknown')} (${esc(lastManual.call_id||'')}) at ${esc((lastManual.requested_at||'').replace('T',' ').slice(0,16))}`
-        : '';
+      let historyLine = '';
+      if (lastManual){
+        historyLine = `Last manual call: ${esc(lastManual.status||'unknown')} (${esc(lastManual.call_id||'')}) at ${esc((lastManual.requested_at||'').replace('T',' ').slice(0,16))}`;
+        if (lastManual.transcript_synced){
+          const content = lastManual.transcript || lastManual.summary;
+          historyLine += content ? ` — ${esc(String(content).slice(0,220))}${String(content).length>220?'…':''}` : ' — call ended, no transcript returned';
+        } else {
+          historyLine += ' — waiting for call to end to sync transcript';
+        }
+      }
       return `<div class="row" data-pid="${esc(p.patient_id)}">
         <div><span class="name">${esc(p.name)}</span><span class="id">${esc(p.patient_id)}</span></div>
         <div class="meta">${p.day_of_therapy>=0 ? 'day '+p.day_of_therapy+' &middot; '+p.pct_nights_ge_4hr+'%' : 'no data'}</div>

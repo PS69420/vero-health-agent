@@ -90,9 +90,13 @@ def _first_name(full_name: str) -> str:
     return full_name.split()[0]
 
 
-def _variable_values(patient, snapshot) -> dict:
+def _variable_values(patient, snapshot, recall_note: Optional[str] = None) -> dict:
     """Matches the {{...}} template variables in the configured Vapi
-    assistant's system prompt exactly -- see PATIENT DATA section there."""
+    assistant's system prompt exactly -- see PATIENT DATA section there.
+    `previousCallNotes` is extra context from semantic memory (see
+    agent/semantic_memory.py) -- it's only useful once the assistant's
+    prompt actually references {{previousCallNotes}}; Vapi silently ignores
+    variables a prompt doesn't use, so passing it costs nothing either way."""
     device = "unknown"
     if patient.pap_status and patient.pap_status.on_pap:
         device = patient.pap_status.device_type or "PAP device"
@@ -106,15 +110,31 @@ def _variable_values(patient, snapshot) -> dict:
         "daysOver4h": str(snapshot.days_used_ge_4hr) if snapshot else "unknown",
         "totalDays": str(snapshot.days_in_period) if snapshot else "unknown",
         "ahi": str(snapshot.ahi) if snapshot and snapshot.ahi is not None else "unknown",
+        "previousCallNotes": recall_note or "No prior call notes on file.",
     }
 
 
-def place_manual_call(patient, snapshot=None) -> dict:
+def fetch_call(call_id: str) -> dict:
+    """Read-only: fetches a call's current status/transcript/summary from
+    Vapi. Placing a call returns immediately (status "queued"); the
+    transcript only exists once the call has actually ended, so callers
+    should poll this after some delay rather than expecting it right away."""
+    body = _api_get(f"/call/{call_id}")
+    return {
+        "call_id": body.get("id"),
+        "status": body.get("status"),
+        "ended_reason": body.get("endedReason"),
+        "transcript": body.get("transcript"),
+        "summary": body.get("summary"),
+    }
+
+
+def place_manual_call(patient, snapshot=None, recall_note: Optional[str] = None) -> dict:
     """Places a REAL outbound call via Vapi, to VAPI_TEST_OVERRIDE_NUMBER
     (not the patient's real number -- see module docstring). Only ever call
     this in direct response to an explicit human button press."""
     to_number = _env("VAPI_TEST_OVERRIDE_NUMBER")
-    variable_values = _variable_values(patient, snapshot)
+    variable_values = _variable_values(patient, snapshot, recall_note)
     payload = {
         "assistantId": _env("VAPI_ASSISTANT_ID"),
         "phoneNumberId": _env("VAPI_PHONE_NUMBER_ID"),
@@ -145,5 +165,7 @@ def place_manual_call(patient, snapshot=None) -> dict:
         "to_number": to_number,
         "patient_id": patient.patient_id,
         "variable_values": variable_values,
+        "transcript": None,
+        "transcript_synced": False,  # console/server.py fills this in once the call ends
         "simulated": False,
     }

@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent.memory import JsonEpisodicMemory
 from agent.models import ComplianceSnapshot, Patient, PapStatus
+from agent.semantic_memory import LocalTfidfVectorStore
 from agent.agents.compliance_agent import ComplianceAgent
 
 
@@ -176,6 +177,31 @@ class TestComplianceAgent(unittest.TestCase):
         decision2 = agent2.evaluate(p, snap)
         self.assertEqual(decision2.action, "none")
         self.assertEqual(len(self.human_queue.tasks), 1)
+
+    def test_second_call_references_semantic_memory_of_first_call(self):
+        """End-to-end with the real vector store and the real MockVoiceCallTool
+        (no fakes): the second call should reference what the patient said on
+        the first one instead of the generic "good to talk with you again.\""""
+        from agent.tools.voice_tool import MockVoiceCallTool
+        semantic_memory = LocalTfidfVectorStore(self.tmpdir / "semantic.json")
+        voice = MockVoiceCallTool()
+        p = _patient(flags=["elevated_mask_leak"])  # deterministically infers the "mask_leak" barrier
+        snap = _snapshot("p1", date(2026, 1, 1), date(2026, 1, 11), days_used_ge_4hr=5)
+
+        agent1 = ComplianceAgent(voice_tool=voice, human_queue_tool=self.human_queue, memory=self.memory,
+                                  as_of=date(2026, 1, 12), semantic_memory=semantic_memory)
+        agent1.evaluate(p, snap)  # day 11: early window, nothing to recall yet
+
+        agent2 = ComplianceAgent(voice_tool=voice, human_queue_tool=self.human_queue, memory=self.memory,
+                                  as_of=date(2026, 3, 12), semantic_memory=semantic_memory)  # day 70: urgent window
+        agent2.evaluate(p, snap)
+
+        calls = self.memory.calls_for("p1")
+        self.assertEqual(len(calls), 2)
+        first_agent_lines = " ".join(t["text"] for t in calls[0]["transcript"] if t["speaker"] == "agent")
+        second_agent_lines = " ".join(t["text"] for t in calls[1]["transcript"] if t["speaker"] == "agent")
+        self.assertNotIn("Last time we spoke", first_agent_lines)
+        self.assertIn("Last time we spoke you mentioned the mask was leaking", second_agent_lines)
 
 
 if __name__ == "__main__":
