@@ -101,6 +101,15 @@
   const DME_LABEL = {order_initial_pap:'Initial PAP order', equipment_upgrade:'Equipment upgrade', supply_resupply:'Resupply logged', no_action:'No DME action'};
   const COMP_LABEL = {log_compliant:'Compliant', schedule_urgent_outreach:'Urgent outreach due', schedule_early_outreach:'Early outreach due', schedule_maintenance_outreach:'Maintenance outreach due', escalate_human:'Escalated', none:'Monitoring'};
 
+  // Single source of truth for whether a call button may be enabled: the
+  // system must be ready AND the patient must have consented to AI contact.
+  // A patient without consent stays disabled regardless of the status light.
+  function applyButtonState(){
+    document.querySelectorAll('.call-btn').forEach(b => {
+      b.disabled = !ready || b.dataset.consent === '0';
+    });
+  }
+
   async function refreshStatus(){
     const light = document.getElementById('light');
     light.className = 'light pending';
@@ -118,7 +127,7 @@
       document.getElementById('statusDetail').textContent = 'Console server unreachable: ' + e;
     }
     document.getElementById('statusMeta').textContent = 'checked ' + new Date().toLocaleTimeString();
-    document.querySelectorAll('.call-btn').forEach(b => { b.disabled = !ready; });
+    applyButtonState();
   }
 
   async function loadRoster(){
@@ -138,14 +147,16 @@
           <span class="pill ${p.compliance_escalated?'bad':(p.compliant?'':'warn')}">${esc(COMP_LABEL[p.compliance_action]||p.compliance_action)}</span>
           ${!p.ai_contact_consent ? '<span class="pill no-consent">no AI consent</span>' : ''}
         </div>
-        <button class="call-btn" type="button" ${ready?'':'disabled'}>Call now</button>
+        <button class="call-btn" type="button" data-consent="${p.ai_contact_consent ? '1' : '0'}" ${(ready && p.ai_contact_consent)?'':'disabled'} title="${p.ai_contact_consent ? '' : 'Patient has not consented to AI contact -- calling is disabled'}">${p.ai_contact_consent ? 'Call now' : 'No AI consent'}</button>
         ${historyLine ? `<div class="row-history">${historyLine}</div>` : ''}
       </div>`;
     }).join('');
     document.getElementById('roster').innerHTML = rows;
+    applyButtonState();
 
     document.querySelectorAll('.call-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
+        if (btn.dataset.consent === '0') return; // belt-and-suspenders; button is already disabled
         const row = btn.closest('.row');
         const pid = row.dataset.pid;
         btn.disabled = true;
@@ -169,7 +180,7 @@
           resultEl.textContent = 'Failed: ' + e;
         }
         btn.textContent = 'Call now';
-        btn.disabled = !ready;
+        applyButtonState();
       });
     });
   }

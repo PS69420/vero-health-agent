@@ -103,6 +103,12 @@ def place_call_for(patient_id: str) -> tuple[int, dict]:
     if patient is None:
         return 404, {"error": f"Unknown patient_id: {patient_id}"}
 
+    # Enforced here, not just as a disabled button in the UI -- a stale page,
+    # a direct request, or a future UI bug must not be able to place an AI
+    # call to a patient who hasn't consented to one.
+    if not patient.ai_contact_consent:
+        return 403, {"error": f"{patient.name} has not consented to AI contact. Calling is blocked for this patient."}
+
     snap = compliance_data.get_latest_snapshot(patient_id)
     try:
         result = vapi_call_tool.place_manual_call(patient, snap)
