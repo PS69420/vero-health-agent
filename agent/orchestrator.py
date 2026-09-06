@@ -17,6 +17,7 @@ from agent.memory import JsonEpisodicMemory
 from agent.tools.compliance_data_tool import MockComplianceDataTool
 from agent.tools.email_tool import MockEmailTool
 from agent.tools.emr_tool import MockEmrTool
+from agent.tools.human_queue_tool import MockHumanTaskQueueTool
 from agent.tools.voice_tool import MockVoiceCallTool
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -35,17 +36,18 @@ def build_default_toolset(output_dir: Path = OUTPUT_DIR):
     compliance_data = MockComplianceDataTool(DATA_DIR / "compliance.json")
     email = MockEmailTool(output_dir / "emails")
     voice = MockVoiceCallTool()
+    human_queue = MockHumanTaskQueueTool()
     memory = JsonEpisodicMemory(output_dir / "memory" / "episodic_memory.json")
-    return emr, compliance_data, email, voice, memory
+    return emr, compliance_data, email, voice, human_queue, memory
 
 
 def run_all(as_of: date | None = None, output_dir: Path = OUTPUT_DIR) -> dict:
     as_of = as_of or date.today()
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    emr, compliance_data, email, voice, memory = build_default_toolset(output_dir)
+    emr, compliance_data, email, voice, human_queue, memory = build_default_toolset(output_dir)
     dme_agent = DmeNeedsAgent(email_tool=email, memory=memory, as_of=as_of)
-    compliance_agent = ComplianceAgent(voice_tool=voice, memory=memory, as_of=as_of)
+    compliance_agent = ComplianceAgent(voice_tool=voice, human_queue_tool=human_queue, memory=memory, as_of=as_of)
 
     patients = emr.list_patients()
 
@@ -123,8 +125,9 @@ def _build_summary_report(as_of, patients, dme_results, compliance_results) -> s
             continue
         lines.append(f"### {label} ({len(group)})\n")
         for r in group:
+            channel = " [HUMAN CALL QUEUED - no AI consent]" if r.outreach_channel == "human" else ""
             lines.append(
-                f"- **{r.patient_name}** ({r.patient_id}) - day {r.day_of_therapy} of therapy, "
+                f"- **{r.patient_name}** ({r.patient_id}){channel} - day {r.day_of_therapy} of therapy, "
                 f"{r.pct_nights_ge_4hr}% nights >= 4hr"
             )
             for reason in r.rationale:

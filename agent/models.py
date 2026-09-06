@@ -49,6 +49,12 @@ class Patient:
     office_note_summary: str = ""
     clinical_flags: list[str] = field(default_factory=list)
     is_synthetic: bool = False
+    # Whether the patient has consented to being contacted by the AI voice
+    # agent (Vapi). Defaults True so existing fixtures/tests don't need to
+    # opt in explicitly; a real EMR feed should always send this explicitly.
+    # When False, the compliance agent routes outreach to a human caller
+    # instead of placing an automated call.
+    ai_contact_consent: bool = True
 
     def latest_study(self) -> Optional[SleepStudy]:
         return max(self.sleep_studies, key=lambda s: s.date) if self.sleep_studies else None
@@ -106,8 +112,12 @@ class ComplianceDecision:
     within_90_day_window: bool
     compliant: bool
     pct_nights_ge_4hr: float
-    action: str  # "none" | "log_compliant" | "schedule_early_outreach" | "schedule_urgent_outreach" | "escalate_human"
+    action: str  # "none" | "log_compliant" | "schedule_early_outreach" | "schedule_urgent_outreach" | "schedule_maintenance_outreach" | "escalate_human"
     rationale: list[str]
     requires_human_escalation: bool = False
     escalation_reasons: list[str] = field(default_factory=list)
     reasoning_trace: list[dict] = field(default_factory=list)
+    # Set only when `action` places outreach: "ai" (Vapi-style call) or
+    # "human" (patient hasn't consented to AI contact -- queued for a staff
+    # member to call instead). None for actions that don't place outreach.
+    outreach_channel: Optional[str] = None

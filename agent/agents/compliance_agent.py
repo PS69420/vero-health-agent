@@ -18,12 +18,17 @@ into a trace for audit):
                                            urgency outreach
   - a clinical red flag or vulnerable-  -> escalate to a human instead of
     patient flag is present                auto-calling
-  - we already called this patient      -> don't nag, log why we're skipping
-    recently (memory check)
+  - patient hasn't consented to AI      -> queue a callback for a human
+    contact (patient.ai_contact_consent)   staff member instead of placing
+                                            an automated Vapi call
+  - we already contacted this patient   -> don't nag, log why we're skipping
+    recently (memory check, either channel)
 
-All outbound calls go through the mock VoiceCallTool (agent/tools/voice_tool.py)
-and every call transcript + outcome is written to long-term memory so future
-runs know the outreach history for that patient.
+Outreach calls go through the mock VoiceCallTool (agent/tools/voice_tool.py)
+when the patient has consented to AI contact, or the mock HumanTaskQueueTool
+(agent/tools/human_queue_tool.py) when they haven't. Either way the outcome is
+written to long-term memory so future runs know the outreach history for that
+patient regardless of which channel reached them.
 """
 
 from __future__ import annotations
@@ -34,12 +39,14 @@ from agent import config
 from agent.knowledge_base import COMPLIANCE_ESCALATION_FLAGS as _ESCALATION_FLAGS
 from agent.memory import JsonEpisodicMemory, ShortTermTrace
 from agent.models import ComplianceDecision, ComplianceSnapshot, Patient
-from agent.tools.base import VoiceCallTool
+from agent.tools.base import HumanTaskQueueTool, VoiceCallTool
 
 
 class ComplianceAgent:
-    def __init__(self, voice_tool: VoiceCallTool, memory: JsonEpisodicMemory, as_of: date):
+    def __init__(self, voice_tool: VoiceCallTool, human_queue_tool: HumanTaskQueueTool,
+                 memory: JsonEpisodicMemory, as_of: date):
         self.voice_tool = voice_tool
+        self.human_queue_tool = human_queue_tool
         self.memory = memory
         self.as_of = as_of
 
@@ -110,23 +117,42 @@ class ComplianceAgent:
                 reasoning_trace=trace.steps,
             )
 
-        days_since_call = self.memory.days_since_last_call(patient.patient_id, self.as_of)
-        if days_since_call is not None and days_since_call < rules.min_days_between_calls:
-            trace.observe(f"Already called {days_since_call} day(s) ago -- within the {rules.min_days_between_calls}-day cooldown, skipping.")
-            rationale.append(f"Outreach call already placed {days_since_call} day(s) ago; holding off to avoid over-contacting.")
+        days_since_outreach = self.memory.days_since_last_outreach(patient.patient_id, self.as_of)
+        if days_since_outreach is not None and days_since_outreach < rules.min_days_between_calls:
+            trace.observe(f"Already contacted {days_since_outreach} day(s) ago -- within the {rules.min_days_between_calls}-day cooldown, skipping.")
+            rationale.append(f"Outreach already placed {days_since_outreach} day(s) ago; holding off to avoid over-contacting.")
             return ComplianceDecision(
                 patient_id=patient.patient_id, patient_name=patient.name,
                 day_of_therapy=day_of_therapy, within_90_day_window=within_90, compliant=False,
                 pct_nights_ge_4hr=pct, action="none", rationale=rationale, reasoning_trace=trace.steps,
             )
 
-        prior_calls = self.memory.calls_for(patient.patient_id)
+        prior_outreach = self.memory.all_outreach_for(patient.patient_id)
 
         def _place_outreach_call(purpose: str, action_label: str) -> ComplianceDecision:
+            if not patient.ai_contact_consent:
+                trace.act("queue_human_call", purpose)
+                task_record = self.human_queue_tool.queue_call(
+                    patient, call_purpose=purpose,
+                    context={"snapshot": snapshot, "day_of_therapy": day_of_therapy, "as_of": self.as_of},
+                )
+                self.memory.record_human_task(patient.patient_id, task_record)
+                trace.observe("Patient has not consented to AI contact -- queued for a human caller instead.")
+                rationale.append(
+                    f"Outreach needed ({purpose}), but patient has not consented to AI-based contact -- "
+                    f"queued for a human staff member to call instead of placing a Vapi call."
+                )
+                return ComplianceDecision(
+                    patient_id=patient.patient_id, patient_name=patient.name,
+                    day_of_therapy=day_of_therapy, within_90_day_window=within_90, compliant=False,
+                    pct_nights_ge_4hr=pct, action=action_label, rationale=rationale,
+                    outreach_channel="human", reasoning_trace=trace.steps,
+                )
+
             trace.act("place_compliance_call", purpose)
             call_record = self.voice_tool.place_call(
                 patient, call_purpose=purpose,
-                context={"snapshot": snapshot, "prior_calls": prior_calls, "day_of_therapy": day_of_therapy, "as_of": self.as_of},
+                context={"snapshot": snapshot, "prior_calls": prior_outreach, "day_of_therapy": day_of_therapy, "as_of": self.as_of},
             )
             self.memory.record_call(patient.patient_id, call_record)
             outcome = call_record.get("outcome_tag")
@@ -139,7 +165,7 @@ class ComplianceAgent:
                 day_of_therapy=day_of_therapy, within_90_day_window=within_90, compliant=False,
                 pct_nights_ge_4hr=pct, action=action_label, rationale=rationale,
                 requires_human_escalation=escalate, escalation_reasons=esc_reasons,
-                reasoning_trace=trace.steps,
+                outreach_channel="ai", reasoning_trace=trace.steps,
             )
 
         if within_90:
@@ -147,7 +173,7 @@ class ComplianceAgent:
             early_hi = rules.first_outreach_day + rules.first_outreach_window_days
             final_lo = rules.final_outreach_day - rules.final_outreach_window_days
 
-            if early_lo <= day_of_therapy <= early_hi and not prior_calls:
+            if early_lo <= day_of_therapy <= early_hi and not prior_outreach:
                 return _place_outreach_call("early_compliance_checkin", "schedule_early_outreach")
 
             if day_of_therapy >= final_lo:

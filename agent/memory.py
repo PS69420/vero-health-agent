@@ -63,9 +63,11 @@ class JsonEpisodicMemory:
             json.dump(self._data, f, indent=2, default=_json_default)
 
     def _bucket(self, patient_id: str) -> dict:
-        return self._data["patients"].setdefault(
-            patient_id, {"calls": [], "decisions": [], "emails": []}
+        bucket = self._data["patients"].setdefault(
+            patient_id, {"calls": [], "decisions": [], "emails": [], "human_tasks": []}
         )
+        bucket.setdefault("human_tasks", [])  # older memory files predate this bucket
+        return bucket
 
     def record_call(self, patient_id: str, call_record: dict):
         self._bucket(patient_id)["calls"].append(call_record)
@@ -79,12 +81,27 @@ class JsonEpisodicMemory:
         self._bucket(patient_id)["emails"].append(email_record)
         self._save()
 
+    def record_human_task(self, patient_id: str, task_record: dict):
+        self._bucket(patient_id)["human_tasks"].append(task_record)
+        self._save()
+
     def calls_for(self, patient_id: str) -> list[dict]:
         return self._bucket(patient_id).get("calls", [])
 
     def last_call_for(self, patient_id: str) -> dict | None:
         calls = self.calls_for(patient_id)
         return calls[-1] if calls else None
+
+    def human_tasks_for(self, patient_id: str) -> list[dict]:
+        return self._bucket(patient_id).get("human_tasks", [])
+
+    def all_outreach_for(self, patient_id: str) -> list[dict]:
+        """AI calls and human-queued tasks together, in chronological order --
+        for logic that cares about "has this patient been contacted at all"
+        regardless of channel (e.g. the once-only early-window outreach, or
+        the outreach cooldown)."""
+        combined = self.calls_for(patient_id) + self.human_tasks_for(patient_id)
+        return sorted(combined, key=lambda r: r.get("timestamp") or r.get("created_at") or "")
 
     def emails_for(self, patient_id: str) -> list[dict]:
         return self._bucket(patient_id).get("emails", [])
@@ -102,4 +119,15 @@ class JsonEpisodicMemory:
         if not last:
             return None
         last_date = date.fromisoformat(last["timestamp"][:10])
+        return (as_of - last_date).days
+
+    def days_since_last_outreach(self, patient_id: str, as_of: date) -> int | None:
+        """Like days_since_last_call, but counts a human-queued task too --
+        the cooldown should hold regardless of which channel last reached
+        the patient."""
+        outreach = self.all_outreach_for(patient_id)
+        if not outreach:
+            return None
+        last = outreach[-1]
+        last_date = date.fromisoformat((last.get("timestamp") or last.get("created_at"))[:10])
         return (as_of - last_date).days

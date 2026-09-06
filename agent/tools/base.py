@@ -58,11 +58,31 @@ class EmailTool(ABC):
 class VoiceCallTool(ABC):
     @abstractmethod
     def place_call(self, patient: Patient, call_purpose: str, context: dict) -> dict:
-        """Place (or, in test mode, simulate) an outbound call. Returns a
+        """Place (or, in test mode, simulate) an outbound AI call. Returns a
         call record dict with at least
         {call_id, patient_id, timestamp, duration_sec, transcript, outcome_tag,
         escalate_to_rt}.
 
+        Never call this for a patient without `patient.ai_contact_consent`
+        -- route those to HumanTaskQueueTool instead.
+
         `context["as_of"]`, when present, is the business date the caller is
         evaluating as of -- a mock implementation should timestamp the call
         against it rather than wall-clock time (see EmailTool.send for why)."""
+
+
+class HumanTaskQueueTool(ABC):
+    """Where outreach goes when it should NOT be an automated AI call --
+    today that's exactly the "patient hasn't consented to AI contact" case,
+    but the interface is general (a real implementation might also route
+    here for a technical failure, or a request the AI declined to handle).
+    A real implementation might write to a work-queue system, a shared
+    spreadsheet, or page a staff member; the mock just logs it to memory."""
+
+    @abstractmethod
+    def queue_call(self, patient: Patient, call_purpose: str, context: dict) -> dict:
+        """Queue a callback for a human staff member. Returns a task record
+        dict with at least {task_id, patient_id, created_at, call_purpose,
+        reason, status}. No transcript -- the human hasn't called yet.
+
+        `context["as_of"]` behaves the same as in VoiceCallTool.place_call."""

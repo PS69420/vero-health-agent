@@ -5,6 +5,7 @@
       "patient_id": "p001",
       "name": "Williams, Ronald",
       "dob": "1959-07-09",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2026-03-23", "ahi": 90.7, "severity": "severe", "plm_index": 56.0, "plm_severity": "severe", "notes": "Severe OSA. Significant PLM with arousals."},
         {"type": "CPAP_titration", "date": "2026-04-03", "device": "CPAP", "pressure_cmh2o": 17, "ahi_on_pressure": 4.0, "plm_index_on_pressure": 172.8, "notes": "AHI well controlled at 17cmH2O fixed CPAP. PLM index worsened/persisted on treatment (172.8) despite AHI control - limb movement disorder needs separate management."}
@@ -17,6 +18,7 @@
       "patient_id": "p002",
       "name": "Pena, Gabriel",
       "dob": "1984-09-28",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2023-03-02", "ahi": 23.3, "severity": "moderate"}
       ],
@@ -28,6 +30,7 @@
       "patient_id": "p003",
       "name": "Trinidad, Carmelo",
       "dob": "1965-02-12",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2023-12-07", "ahi": 57.2, "severity": "severe"},
         {"type": "CPAP_titration", "date": "2024-01-08", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 1.4, "notes": "AHI well controlled at 10cmH2O."}
@@ -40,6 +43,7 @@
       "patient_id": "p004",
       "name": "Rodriguez, Elizabeth",
       "dob": "2000-12-31",
+      "ai_contact_consent": false,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2026-04-10", "ahi": 6.4, "severity": "mild"},
         {"type": "CPAP_titration", "date": "2026-05-08", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 1.7, "notes": "AHI well controlled at 10cmH2O."}
@@ -52,6 +56,7 @@
       "patient_id": "p005",
       "name": "Ramirez, Francisco",
       "dob": "1958-06-10",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2026-03-06", "ahi": 114.0, "severity": "severe"},
         {"type": "CPAP_titration", "date": "2026-03-14", "device": "CPAP", "pressure_cmh2o": 15, "ahi_on_pressure": 37.8, "notes": "AHI NOT resolved at 15cmH2O - still moderate-severe residual disease on max titrated pressure. Consider BiPAP or interface change."}
@@ -64,6 +69,7 @@
       "patient_id": "p006",
       "name": "Byrnes, Kenneth",
       "dob": "1961-11-06",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2023-11-16", "ahi": 15.4, "severity": "moderate", "plm_index": 77.1, "plm_severity": "severe"}
       ],
@@ -75,6 +81,7 @@
       "patient_id": "p007",
       "name": "Thiele, Thomas",
       "dob": "1962-11-21",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2025-09-10", "ahi": 52.7, "severity": "severe"},
         {"type": "BiPAP_ASV_titration", "date": "2025-11-12", "device": "BiPAP-ASV", "epap": 9, "ps_range": "4-10", "ahi_on_pressure": 36.4, "notes": "AHI persisted at 36.4 despite ASV titration; hypoxemia and cardiac arrhythmias noted on EKG during study. Complex case - required physician co-management."}
@@ -87,6 +94,7 @@
       "patient_id": "p008",
       "name": "Liriano, Cristian",
       "dob": "1965-06-17",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2022-03-11", "ahi": 65.0, "severity": "severe", "notes": "Severe OSA with a central sleep apnea component."},
         {"type": "CPAP_titration", "date": "2024-07-13", "device": "CPAP", "pressure_cmh2o": 9, "ahi_on_pressure": 3.7, "notes": "AHI controlled at 9cmH2O."}
@@ -99,6 +107,7 @@
       "patient_id": "p009",
       "name": "Williams, Clay",
       "dob": "1962-09-03",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2026-04-28", "ahi": 19.8, "severity": "moderate", "rem_ahi": 57.6, "notes": "REM-predominant OSA - AHI much worse in REM sleep."},
         {"type": "CPAP_titration", "date": "2026-05-12", "device": "CPAP", "pressure_cmh2o": 12, "ahi_on_pressure": 2.5, "notes": "AHI well controlled at 12cmH2O."}
@@ -111,6 +120,7 @@
       "patient_id": "p010",
       "name": "Simpson, Michelle",
       "dob": "1965-09-25",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2026-03-25", "ahi": 24.7, "severity": "moderate"},
         {"type": "CPAP_titration", "date": "2026-05-08", "device": "CPAP", "pressure_cmh2o": 14, "ahi_on_pressure": 4.5, "notes": "Mild residual events in REM at 14cmH2O; titration note suggests trial of 15cmH2O."}
@@ -123,6 +133,7 @@
       "patient_id": "p011",
       "name": "Defalco, Garrett",
       "dob": "1983-09-29",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2021-10-22", "ahi": 9.5, "severity": "mild", "rem_ahi": 29.2},
         {"type": "CPAP_titration", "date": "2025-05-03", "device": "CPAP", "pressure_cmh2o": 14, "ahi_on_pressure": 0.5, "notes": "Excellent control at 14cmH2O."}
@@ -135,6 +146,7 @@
       "patient_id": "p012",
       "name": "Sandoval, Raul",
       "dob": "1974-09-27",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2025-11-11", "ahi": 19.6, "severity": "moderate"},
         {"type": "CPAP_titration", "date": "2025-12-22", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 2.4, "notes": "AHI well controlled."}
@@ -147,6 +159,7 @@
       "patient_id": "p013",
       "name": "Figueroa, Luis",
       "dob": "1991-07-04",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2026-01-22", "ahi": 37.9, "severity": "severe"},
         {"type": "CPAP_titration", "date": "2026-02-07", "device": "CPAP", "pressure_cmh2o": 12, "ahi_on_pressure": 5.5, "notes": "Mild residual events persist at 12cmH2O - titration note recommends increasing to 14cmH2O."}
@@ -159,6 +172,7 @@
       "patient_id": "p014",
       "name": "Gillesheimer, George",
       "dob": "1949-08-23",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2026-02-18", "ahi": 45.0, "severity": "severe", "notes": "Central and mixed apnea component noted."},
         {"type": "CPAP_titration", "date": "2026-03-11", "device": "CPAP", "pressure_cmh2o": 16, "ahi_on_pressure": 8.8, "plm_index_on_pressure": 60.0, "plm_severity": "severe", "notes": "Residual AHI still elevated (8.8) at max fixed pressure 16cmH2O; severe PLM as well."}
@@ -171,6 +185,7 @@
       "patient_id": "p015",
       "name": "Mucciolo, Rosann",
       "dob": "1962-10-04",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2026-05-16", "ahi": 9.8, "severity": "mild", "rem_ahi": 30.7},
         {"type": "CPAP_titration", "date": "2026-06-02", "device": "CPAP", "pressure_cmh2o": 11, "ahi_on_pressure": 3.1, "notes": "Well controlled at 11cmH2O."}
@@ -183,6 +198,7 @@
       "patient_id": "p016",
       "name": "Rana, Shyamku",
       "dob": "2002-06-03",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2025-10-27", "ahi": 27.0, "severity": "moderate"},
         {"type": "CPAP_titration", "date": "2025-11-13", "device": "CPAP", "pressure_cmh2o": 8, "ahi_on_pressure": 6.2, "notes": "Residual events persist at 8cmH2O - titration note recommends AutoCPAP 8-16cmH2O."}
@@ -195,6 +211,7 @@
       "patient_id": "p017",
       "name": "Roig, Jose",
       "dob": "1954-12-31",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2023-06-17", "ahi": 53.4, "severity": "severe"},
         {"type": "CPAP_titration", "date": "2023-07-13", "device": "CPAP", "pressure_cmh2o": 12, "ahi_on_pressure": 2.8, "notes": "Well controlled."}
@@ -207,6 +224,7 @@
       "patient_id": "p018",
       "name": "Ang, Ban",
       "dob": "1953-03-16",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "PSG_diagnostic", "date": "2025-11-18", "ahi": 49.2, "severity": "severe", "notes": "Central apnea component present."},
         {"type": "CPAP_titration", "date": "2025-12-17", "device": "CPAP", "pressure_cmh2o": 6, "ahi_on_pressure": 1.8, "notes": "Well controlled at low pressure of 6cmH2O."}
@@ -219,6 +237,7 @@
       "patient_id": "p019",
       "name": "Ramos, Acisclo",
       "dob": "1975-10-05",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2021-05-17", "ahi": 25.3, "severity": "moderate"}
       ],
@@ -230,6 +249,7 @@
       "patient_id": "p020",
       "name": "Vega, Peggylee",
       "dob": "1972-10-19",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "AirView_diagnostic", "date": "2025-11-30", "ahi": 36.5, "severity": "severe"},
         {"type": "CPAP_titration", "date": "2025-12-16", "device": "CPAP", "pressure_cmh2o": 10, "ahi_on_pressure": 2.4, "notes": "Pressure increase during titration produced new central apneas - treatment-emergent central sleep apnea noted. Settled on 10cmH2O."}
@@ -242,6 +262,7 @@
       "patient_id": "p021",
       "name": "Rhodes, Eva",
       "dob": "1992-05-16",
+      "ai_contact_consent": true,
       "sleep_studies": [
         {"type": "CPAP_titration", "date": "2026-04-23", "device": "CPAP", "pressure_cmh2o": 17, "plm_index_on_pressure": 12.0, "plm_severity": "mild", "notes": "Pressure increased to 17cmH2O from prior 12cmH2O."}
       ],
@@ -253,6 +274,7 @@
       "patient_id": "p022",
       "name": "[SYNTHETIC TEST FIXTURE] Doe, Jordan",
       "dob": "1978-01-15",
+      "ai_contact_consent": true,
       "_synthetic": true,
       "_synthetic_note": "Not from source documents. Added only to exercise the 'treatment-naive patient needs an initial PAP order' code path, since every real patient in the sample data already had CPAP ordered.",
       "sleep_studies": [

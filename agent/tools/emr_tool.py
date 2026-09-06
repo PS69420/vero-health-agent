@@ -66,6 +66,7 @@ class MockEmrTool(EmrTool):
             office_note_summary=p.get("office_note_summary", ""),
             clinical_flags=list(p.get("clinical_flags", [])),
             is_synthetic=bool(p.get("_synthetic", False)),
+            ai_contact_consent=bool(p.get("ai_contact_consent", True)),
         )
 
     def list_patients(self) -> list[Patient]:
