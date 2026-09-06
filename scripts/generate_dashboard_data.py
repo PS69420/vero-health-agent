@@ -105,7 +105,7 @@ def build_snapshot(as_of_str: str, backtest_dir: Path, patients_by_id: dict) -> 
 
     patients_out = []
     for pid, p in patients_by_id.items():
-        bucket = mem.get(pid, {"calls": [], "emails": []})
+        bucket = mem.get(pid, {"calls": [], "emails": [], "human_tasks": []})
         emails = []
         for e in bucket.get("emails", []):
             e = dict(e)
@@ -116,10 +116,12 @@ def build_snapshot(as_of_str: str, backtest_dir: Path, patients_by_id: dict) -> 
             "patient_id": pid,
             "name": p["name"],
             "is_synthetic": bool(p.get("_synthetic", False)),
+            "ai_contact_consent": bool(p.get("ai_contact_consent", True)),
             "dme": asdict(dme_by_id[pid]),
             "compliance": asdict(comp_by_id[pid]),
             "emails": emails,
             "calls": bucket.get("calls", []),
+            "human_tasks": bucket.get("human_tasks", []),
         })
 
     def counts(results, key):
@@ -137,8 +139,10 @@ def build_snapshot(as_of_str: str, backtest_dir: Path, patients_by_id: dict) -> 
         "compliance_escalations": sum(1 for r in result["compliance_results"] if r.requires_human_escalation),
         "emails_sent_cumulative": sum(len(v.get("emails", [])) for v in mem.values()),
         "calls_placed_cumulative": sum(len(v.get("calls", [])) for v in mem.values()),
+        "human_tasks_queued_cumulative": sum(len(v.get("human_tasks", [])) for v in mem.values()),
         "emails_sent_this_date": sum(1 for pl in patients_out for e in pl["emails"] if e["sent_at"].startswith(as_of_str)),
         "calls_placed_this_date": sum(1 for pl in patients_out for c in pl["calls"] if c["timestamp"].startswith(as_of_str)),
+        "human_tasks_queued_this_date": sum(1 for pl in patients_out for t in pl["human_tasks"] if t["created_at"].startswith(as_of_str)),
     }
     return {"as_of": as_of_str, "stats": stats, "patients": patients_out}
 
