@@ -38,4 +38,4 @@ The EMR and AirView/DME-Link connectors are still mocks; going live means writin
 
 ## GitHub Repository
 
-**[insert public repo URL]** — includes the full source, the test suite, sample synthetic patient data, the dashboard generator, setup instructions for both the offline pipeline and the local Vapi console, and this report.
+**https://github.com/PS69420/vero-health-agent** — includes the full source, the test suite, sample synthetic patient data, the dashboard generator, setup instructions for both the offline pipeline and the local Vapi console, and this report.
