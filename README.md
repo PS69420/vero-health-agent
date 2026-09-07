@@ -252,16 +252,15 @@ This is a real, billed action against your Vapi account each time you press
 the button — there's no simulate-only mode for this particular button by
 design, since the whole point is proving the live connection works.
 
-## Next steps once you're happy with the logic
+## Next steps 
 
-- Swap `MockEmrTool` for your real EMR connector.
+- Swap `MockEmrTool` for real EMR connector.
 - Swap `MockComplianceDataTool` for the real AirView / DME Link connector(s) —
-  you'll likely need one per vendor (ResMed, ReactHealth, etc.), each
+  one per vendor (ResMed, ReactHealth, etc.), each
   normalizing into `ComplianceSnapshot`.
 - `agent/tools/vapi_call_tool.py` is a real Vapi connector, but today it's only
   wired into the manual console (see below), not the automated
-  `ComplianceAgent` scheduling path. Once you're comfortable with real calls
-  firing on a schedule instead of a button press, swap `MockVoiceCallTool` for
+  `ComplianceAgent` scheduling path. Swap `MockVoiceCallTool` for
   it there too, remove the `VAPI_TEST_OVERRIDE_NUMBER` override, and wire real
   patient phone numbers into the EMR data.
 - Swap `MockEmailTool` for SMTP/Graph so doctor emails actually send, and
